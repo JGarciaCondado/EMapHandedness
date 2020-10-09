@@ -13,18 +13,18 @@ class Generator(Sequence):
 
     Arguments:
     fnDir: directory contianing PDBs to use
-    batch_size: nº of boxes in a batch
-    batch_per_epoch: nº of batches in an epoch
-    box_size: integer especifyin box dimension
+    batch_size: # of boxes in a batch
+    batch_per_epoch: # of batches in an epoch
+    boxDim: integer especifyin box dimension
     maxRes: maximum resolution used in simulation
     """
 
-    def __init__(self, fnDir, batch_size, batch_per_epoch, box_size, maxRes):
+    def __init__(self, fnDir, batch_size, batch_per_epoch, boxDim, maxRes):
         self.PDBs = glob.glob(fnDir+"/*pdb")
         self.maxRes = maxRes
         self.batch_size = batch_size
         self.batch_per_epoch = batch_per_epoch
-        self.box_size = box_size
+        self.boxDim = boxDim
         self.Boxes=[]
 
     def __len__(self):
@@ -42,22 +42,23 @@ class Generator(Sequence):
     def createBoxes(self, Vf, Vmask):
         """ Extract boxes from volume and mask provided
         """
+        # TODO fix handling of boxes to deal with even number of dimensions
         Zdim, Ydim, Xdim = Vf.shape
-        boxDim2 = boxDim//2
+        boxDim2 = self.boxDim//2
         # Iterate over all coordinates in volume and extract a box around these
         for z in range(boxDim2,Zdim-boxDim2):
             for y in range(boxDim2,Ydim-boxDim2):
                 for x in range(boxDim2,Xdim-boxDim2):
                     if Vmask[z,y,x]>0:
-                        box=sVf[z-boxDim2:z+boxDim2+1,y-boxDim2:y+boxDim2+1,x-boxDim2:x+boxDim2+1]
-                        self.allBoxes.append(box/np.linalg.norm(box))
+                        box=Vf[z-boxDim2:z+boxDim2+1,y-boxDim2:y+boxDim2+1,x-boxDim2:x+boxDim2+1]
+                        self.Boxes.append(box/np.linalg.norm(box))
 
     def populate_boxes(self):
         """ Simulate electron density from PDB and extract boxes from the volume. 
         """
 
         # Choose random name to assing to saved files
-        fnRandom = ''.join([np.random.choice(string.ascii_letters + string.digits) for i in range(32)])
+        fnRandom = ''.join([np.random.choice([char for char in string.ascii_letters + string.digits]) for i in range(32)])
         fnHash = "tmp"+fnRandom
         
         # Try generating the volume if this fails remove PDB from list and choose a new
@@ -95,9 +96,9 @@ class Generator(Sequence):
     def __getitem__(self,idx):
         """ Generate a batch 
         """
-        batchX = np.zeros((batch_size,boxDim,boxDim,boxDim,1))
-        batchY = np.zeros(batch_size)
-        for n in range(batch_size):
+        batchX = np.zeros((self.batch_size,self.boxDim,self.boxDim,self.boxDim,1))
+        batchY = np.zeros(self.batch_size)
+        for n in range(self.batch_size):
             # If there are no more boxes populate
             if self.Boxes == []:
                 self.populate_boxes()
@@ -115,7 +116,7 @@ class Generator(Sequence):
         # Target 0 means box not flipped
         target = 0
         # Flip box randomly 50% of times
-        if np.random.randint():
+        if np.random.randint(2):
             box = np.flip(box, np.random.randint(0,3))
             target=1
         return box, target
