@@ -15,5 +15,5 @@ class EMHNet():
         model = models.Model(inputLayer, L)
         model.compile(optimizer = 'adam',
                       loss = losses.BinaryCrossentropy(),
-                      metric=['accuracy'])
+                      metrics=['accuracy'])
         return model

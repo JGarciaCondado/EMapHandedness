@@ -28,7 +28,7 @@ class Generator(Sequence):
         self.Boxes=[]
 
     def __len__(self):
-        return batch_per_epoch
+        return self.batch_per_epoch
 
     def runJob(self, cmd, cwd='./'):
         """ Run command in a supbrocess using the xmipp3 environment
