@@ -1,3 +1,6 @@
+from tensorflow.keras.models import load_model
+import numpy as np
+import xmippLib
 
 class Predictor():
     """Predictor class used to generate predictions for a given model and
@@ -33,7 +36,7 @@ class Predictor():
         #TODO make mask optional
         box_predictions = self.predict_box_class(X)
         volume_prediction = self.consensus_voting(box_predictions)
-        return volume_prediciton, box_predictions
+        return volume_prediction, box_predictions
 
     def predict_box_class(self, boxes):
         """Predict box class and return prediction.
@@ -46,15 +49,16 @@ class Predictor():
         """
         pass
 
-    def evaluat_accuarcy(self, targets, volumes, masks, threshold=0.5):
+    def evaluate_accuracy(self, targets, volumes, masks, threshold=0.5):
         """ Evaluate accuacy of model from targest, volumes and masks.
         """
         #TODO check length targets, volumes and masks same
         #TODO make masks optional
         predictions = []
-        for volume, mask in zip(targets, volumes, masks):
+        for volume, mask in zip(volumes, masks):
             volume_prediction, box_predictions = self.predict_volume_class(volume, mask)
             predictions.append(volume_prediction)
+        predictions = np.array(predictions)
         return self.evaluate_accuracy_from_predictions(targets, predictions, threshold)
             
     def evaluate_accuracy_from_predictions(self, targets, predictions, threshold = 0.5):
@@ -69,3 +73,17 @@ class Predictor():
             return 1
         else:
             return 0
+
+
+if __name__ == '__main__':
+    model = load_model('model.h5')
+    predictor = Predictor(model, 15)
+    predictions = np.array([0.65, 0.87, 0.1, 0.6, 0.24, 0.8])
+    targets = np.array([1, 0, 0, 1, 0, 0])
+    print(predictor.consensus_voting(predictions))
+    print(predictor.evaluate_accuracy_from_predictions(targets, predictions))
+    volume = xmippLib.Image('test_files/test_vol.vol').getData()
+    mask = xmippLib.Image('test_files/test_mask.vol').getData()
+    volume_class, boxes_class = predictor.predict_volume_class(volume, mask)
+    print(volume_class, boxes_class[:10])
+    print(predictor.evaluate_accuracy(np.ones(1), [volume], [mask]))
