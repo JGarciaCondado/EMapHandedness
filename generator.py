@@ -38,6 +38,36 @@ class Generator(Sequence):
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         p.wait()
         return 0 == p.returncode
+            
+    def simulate_volume(self, PDB, tmp_name):
+        """ Use Xmipp library to simulate volumes from PDB models.
+        Returns a volume and a mask.
+        """
+        # Center pdb
+        ok = self.runJob("xmipp_pdb_center -i %s -o %s_centered.pdb"%(PDB,tmp_name))
+        # Sample pdb
+        if ok:
+            ok = self.runJob("xmipp_volume_from_pdb  -i %s_centered.pdb -o %s --sampling 1 --size 200 -v 0"%(tmp_name,tmp_name))
+        # Filter to maxRes
+        if ok:
+            ok = self.runJob("xmipp_transform_filter -i %s.vol -o %sFiltered.vol --fourier low_pass %f 0.02 --sampling 1 -v 0"%(tmp_name,tmp_name,self.maxRes))
+        # Create mask by thresholding
+        if ok:
+            ok = self.runJob("xmipp_transform_threshold -i %s.vol -o %sMask.vol --select below 0.3 --substitute binarize -v 0"%(tmp_name,tmp_name))
+        # Binarize mask
+        if ok:
+            ok = self.runJob("xmipp_transform_morphology -i %sMask.vol --binaryOperation erosion -v 0"%tmp_name)
+        # Obtain volumes
+        if ok:
+            Vf = xmippLib.Image("%sFiltered.vol"%tmp_name).getData()
+            Vmask = xmippLib.Image("%sMask.vol"%tmp_name).getData()
+        else:
+            Vf, Vmask = None, None
+        
+        #Remove all temporary files produced 
+        os.system("rm -f %s*"%tmp_name)
+
+        return Vf, Vmask
 
     def createBoxes(self, Vf, Vmask):
         """ Extract boxes from volume and mask provided
@@ -62,36 +92,20 @@ class Generator(Sequence):
         fnHash = "tmp"+fnRandom
         
         # Try generating the volume if this fails remove PDB from list and choose a new
-        ok = False
-        while not ok:
+        Vf, Vmask = None, None
+        while Vf is None:
             # Choose random PDB from all those available
             n = np.random.randint(0,len(self.PDBs))
+            PDB = self.PDBs[n]
 
-            # Center pdb
-            ok = self.runJob("xmipp_pdb_center -i %s -o %s_centered.pdb"%(self.PDBs[n],fnHash))
-            # Sample pdb
-            if ok:
-                ok = self.runJob("xmipp_volume_from_pdb  -i %s_centered.pdb -o %s --sampling 1 --size 200 -v 0"%(fnHash,fnHash))
-            # Filter to maxRes
-            if ok:
-                ok = self.runJob("xmipp_transform_filter -i %s.vol -o %sFiltered.vol --fourier low_pass %f 0.02 --sampling 1 -v 0"%(fnHash,fnHash,self.maxRes))
-            # Create mask by thresholding
-            if ok:
-                ok = self.runJob("xmipp_transform_threshold -i %s.vol -o %sMask.vol --select below 0.3 --substitute binarize -v 0"%(fnHash,fnHash))
-            # Binarize mask
-            if ok:
-                ok = self.runJob("xmipp_transform_morphology -i %sMask.vol --binaryOperation erosion -v 0"%fnHash)
-            if ok:
-                Vf = xmippLib.Image("%sFiltered.vol"%fnHash).getData()
-                Vmask = xmippLib.Image("%sMask.vol"%fnHash).getData()
-                self.createBoxes(Vf, Vmask)
-            
-            #Remove all temporary files produced 
-            os.system("rm -f %s*"%fnHash)
+            #Obtain volumes and mask
+            Vf, Vmask = self.simulate_volume(PDB, fnHash)
 
             # Remove PDB from list if unsuscessful
-            if not ok:
+            if Vf is None:
                 del self.PDBs[n]
+            else:
+                self.createBoxes(Vf, Vmask)
 
     def __getitem__(self,idx):
         """ Generate a batch 
