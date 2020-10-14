@@ -1,6 +1,10 @@
 # Python
 __pycache__/
 *.pyc
+*.swp
 
 # Ignore models
 *.h5
+
+# Ignore pdbs
+nrPDB/
