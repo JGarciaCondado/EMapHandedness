@@ -101,20 +101,3 @@ class Predictor():
             return 1
         else:
             return 0
-
-
-if __name__ == '__main__':
-    model = load_model('model.h5')
-    predictor = Predictor(model, 15)
-    predictions = np.array([0.65, 0.87, 0.1, 0.6, 0.24, 0.8])
-    targets = np.array([1, 0, 0, 1, 0, 0])
-    print(predictor.consensus_voting(predictions))
-    print(predictor.evaluate_accuracy_from_predictions(targets, predictions))
-    volume = xmippLib.Image('test_files/test_vol.vol').getData()
-    mask = xmippLib.Image('test_files/test_mask.vol').getData()
-    volume_class, boxes_class = predictor.predict_volume_class(volume, mask)
-    print(volume_class, boxes_class[:10])
-    print(predictor.evaluate_accuracy(np.ones(1), [volume], [mask]))
-    vpred, boxpred = predictor.predict_pdb_class('nrPDB/1EHS.pdb', 1)
-    print(vpred, boxpred[:10])
-    print(predictor.evaluate_accuracy_generator(Generator('nrPDB', 100, 100, 15, 1))) 
