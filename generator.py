@@ -4,6 +4,7 @@ import numpy as np
 import os
 import string
 import subprocess
+import xmippLib
 
 class Generator(Sequence):
     """Generator class that extracts simulated electron density volumes from PDBs
