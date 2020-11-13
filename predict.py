@@ -1,7 +1,6 @@
 from tensorflow.keras.models import load_model
 from generator import Generator
 import numpy as np
-import xmippLib
 
 class Predictor():
     """Predictor class used to generate predictions for a given model and

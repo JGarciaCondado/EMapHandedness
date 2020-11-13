@@ -3,8 +3,6 @@ import glob
 import numpy as np
 import os
 import string
-import xmippLib
-import xmipp3
 import subprocess
 
 class Generator(Sequence):
@@ -34,7 +32,7 @@ class Generator(Sequence):
         """ Run command in a supbrocess using the xmipp3 environment
             return True if process finished correctly.
         """
-        p = subprocess.Popen(cmd, cwd=cwd, env=xmipp3.Plugin.getEnviron(),
+        p = subprocess.Popen(cmd, cwd=cwd, 
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         p.wait()
         return 0 == p.returncode
