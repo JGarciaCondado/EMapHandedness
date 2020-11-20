@@ -18,8 +18,8 @@ class Generator(Sequence):
     maxRes: maximum resolution used in simulation
     """
 
-    def __init__(self, fnDir, batch_size, batch_per_epoch, boxDim, maxRes):
-        self.PDBs = glob.glob(fnDir+"/*pdb")
+    def __init__(self, pdb_files, batch_size, batch_per_epoch, boxDim, maxRes):
+        self.PDBs = pdb_files
         self.maxRes = maxRes
         self.batch_size = batch_size
         self.batch_per_epoch = batch_per_epoch
@@ -33,11 +33,11 @@ class Generator(Sequence):
         """ Run command in a supbrocess using the xmipp3 environment
             return True if process finished correctly.
         """
-        p = subprocess.Popen(cmd, cwd=cwd, 
+        p = subprocess.Popen(cmd, cwd=cwd,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         p.wait()
         return 0 == p.returncode
-            
+
     def simulate_volume(self, PDB, tmp_name):
         """ Use Xmipp library to simulate volumes from PDB models.
         Returns a volume and a mask.
@@ -62,7 +62,7 @@ class Generator(Sequence):
             Vmask = xmippLib.Image("%sMask.vol"%tmp_name).getData()
         else:
             Vf, Vmask = None, None
-        
+
         #Remove all temporary files produced 
         os.system("rm -f %s*"%tmp_name)
 
@@ -83,13 +83,13 @@ class Generator(Sequence):
                         self.Boxes.append(box/np.linalg.norm(box))
 
     def populate_boxes(self):
-        """ Simulate electron density from PDB and extract boxes from the volume. 
+        """ Simulate electron density from PDB and extract boxes from the volume.
         """
 
         # Choose random name to assing to saved files
         fnRandom = ''.join([np.random.choice([char for char in string.ascii_letters + string.digits]) for i in range(32)])
         fnHash = "tmp"+fnRandom
-        
+
         # Try generating the volume if this fails remove PDB from list and choose a new
         Vf, Vmask = None, None
         while Vf is None:
@@ -107,7 +107,7 @@ class Generator(Sequence):
                 self.createBoxes(Vf, Vmask)
 
     def __getitem__(self,idx):
-        """ Generate a batch 
+        """ Generate a batch
         """
         batchX = np.zeros((self.batch_size,self.boxDim,self.boxDim,self.boxDim,1))
         batchY = np.zeros(self.batch_size)
@@ -125,7 +125,7 @@ class Generator(Sequence):
         """ Return a box with equal likelihood of being flipped
         """
         # Pop a box form those available
-        box = self.Boxes.pop() 
+        box = self.Boxes.pop()
         # Target 0 means box not flipped
         target = 0
         # Flip box randomly 50% of times
