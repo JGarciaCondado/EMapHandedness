@@ -1,8 +1,10 @@
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
+import tensorflow as tf
 from network import EMHNet
 from generator import Generator
 import pickle
 
+DEBUG = False
 batch_size = 100
 batch_per_epoch = 20
 boxDim = 15
@@ -10,6 +12,11 @@ maxRes = 1
 
 
 if __name__=="__main__":
+
+    if DEBUG:
+    print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+    tf.debugging.set_log_device_placement(True)
+
     with open('nrPDB/metadata/data_split.pkl', 'rb') as f:
         train_f, val_f, test_f = pickle.load(f)
     generator_train = Generator(train_f, batch_size, batch_per_epoch, boxDim, maxRes)
