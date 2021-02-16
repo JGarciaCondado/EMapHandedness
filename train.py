@@ -4,7 +4,7 @@ from network import EMHNet, CNN3D
 from generator import Generator
 import pickle
 
-DEBUG = True
+DEBUG = False
 batch_size = 100
 batch_per_epoch = 20
 boxDim = 35
