@@ -55,7 +55,7 @@ def simulate_volume(PDB, tmp_name, maxRes, threshold, alpha_threshold, minresidu
 
 def get_alpha_centroids(Vmask_alpha):
     # Erode mask so as to retain center of alpha helix and seperate different helices
-    Vmask_alpha_outline = binary_erosion(Vmask_alpha, structure=np.ones(box_dim)).astype(Vmask_alpha.dtype)
+    Vmask_alpha_outline = binary_erosion(Vmask_alpha, structure=np.ones((3,3,3))).astype(Vmask_alpha.dtype)
     # Label different regions
     Vmask_alpha_objects = measure.label(Vmask_alpha_outline)
     # Create object that defines region properties
@@ -67,9 +67,21 @@ def get_alpha_centroids(Vmask_alpha):
         # Remove small objects that are probably small disconnections from main alpha
         if region['area'] > 50:
             centroid = [np.rint(i).astype('int') for i in region['centroid']]
-            alpha_centroids.append(centroid)
+            # Check that centroid is also inside outline
+            if Vmask_alpha_outline[centroid[0], centroid[1], centroid[2]]:
+                alpha_centroids.append(centroid)
 
     return alpha_centroids
+
+def extract_boxes(Vf, centroids, box_dim):
+    boxes = []
+    # Box half width assumes dimension must be odd
+    box_hw = int((box_dim-1)/2)
+    for centroid in centroids:
+        boxes.append(Vf[centroid[0]-box_hw:centroid[0]+box_hw,
+                        centroid[1]-box_hw:centroid[1]+box_hw,
+                        centroid[2]-box_hw:centroid[2]+box_hw])
+    return boxes
 
 if __name__ == "__main__":
     # Define variables
@@ -86,3 +98,6 @@ if __name__ == "__main__":
 
     # Get alpha centroids
     alpha_centroids = get_alpha_centroids(Vmask_alpha)
+
+    # Extract alpha boxes
+    alpha_boxes = extract_boxes(Vf, alpha_centroids, box_dim)
