@@ -49,7 +49,7 @@ def simulate_volume(PDB, tmp_name, maxRes, threshold, alpha_threshold, minresidu
     else:
         Vmask_alpha = None
     #Remove all temporary files produced 
-#    os.system("rm -f %s*"%tmp_name)
+    os.system("rm -f %s*"%tmp_name)
 
     return Vf, Vmask, Vmask_alpha
 
@@ -83,15 +83,32 @@ def extract_boxes(Vf, centroids, box_dim):
                         centroid[2]-box_hw:centroid[2]+box_hw])
     return boxes
 
+def get_mask_no_alpha(Vmask, Vmask_alpha, SE):
+    # Union of not alpha and mask gives those that have no alpha
+    Vmask_no_alpha = np.logical_and(Vmask, np.logical_not(Vmask_alpha).astype(Vmask.dtype)).astype(Vmask.dtype)
+    # Erode to minimize overlaps with with alpha boxes
+    Vmask_no_alpha = binary_erosion(Vmask_no_alpha, structure=np.ones((3,3,3))).astype(Vmask.dtype)
+
+    return Vmask_no_alpha
+
+def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
+    # Obtain coordinates where mask is 1
+    possible_centroids = np.argwhere(Vmask_no_alpha == 1.0)
+    # Randomly choose n of this
+    centroid_ids = np.random.choice(len(possible_centroids), n_centroids)
+
+    return possible_centroids[centroid_ids]
+
 if __name__ == "__main__":
     # Define variables
-    PDB = 'nrPDB/1AGC.pdb'
-    tmp_name = 'nrPDB/test'
+    PDB = 'nrPDB/PDB/1AGC.pdb'
+    tmp_name = 'nrPDB/Examples/1AGC'
     maxRes = 5.0
     threshold = 0.5
     alpha_threshold = 0.5
     minresidues = 7
     box_dim = 11
+    SE = np.ones((7,7,7))
 
     # Get volumes 
     Vf, Vmask, Vmask_alpha = simulate_volume(PDB, tmp_name, maxRes, threshold, alpha_threshold, minresidues)
@@ -101,3 +118,12 @@ if __name__ == "__main__":
 
     # Extract alpha boxes
     alpha_boxes = extract_boxes(Vf, alpha_centroids, box_dim)
+
+    # Get volume mask with no alphas
+    Vmask_no_alpha = get_mask_no_alpha(Vmask, Vmask_alpha, SE)
+
+    # Sample centroids from mask containing no alphas
+    no_alpha_centroids = get_no_alpha_centroids(Vmask_no_alpha, len(alpha_centroids))
+
+    # Extract no alpha boxes
+    no_alpha_boxes = extract_boxes(Vf, no_alpha_centroids, box_dim)
