@@ -2,6 +2,8 @@ import subprocess
 import xmippLib
 import os
 import sys
+import string
+import random
 import numpy as np
 from scipy.ndimage.morphology import binary_erosion
 from skimage import measure
@@ -16,40 +18,43 @@ def runJob( cmd, cwd='./'):
     p.wait()
     return 0 == p.returncode
 
-def simulate_volume(PDB, tmp_name, maxRes, threshold, alpha_threshold, minresidues):
+def simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues):
+    # Create temporary name
+    fnRandom = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(32)])
+    fnHash = "nrPDB/tmp"+fnRandom
     # Center pdb
-    ok = runJob("xmipp_pdb_center -i %s -o %s_centered.pdb"%(PDB,tmp_name))
+    ok = runJob("xmipp_pdb_center -i %s -o %s_centered.pdb"%(PDB,fnHash))
     # Obtain only alphas
     if ok:
-        ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_alpha.pdb --keep_alpha %d"%(tmp_name,tmp_name,minresidues))
+        ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_alpha.pdb --keep_alpha %d"%(fnHash,fnHash,minresidues))
     # Sample whole pdb
     if ok:
-        ok = runJob("xmipp_volume_from_pdb  -i %s_centered.pdb -o %s --sampling 1 -v 0"%(tmp_name,tmp_name))
+        ok = runJob("xmipp_volume_from_pdb  -i %s_centered.pdb -o %s --sampling 1 -v 0"%(fnHash,fnHash))
     # Filter to maxRes
     if ok:
-        ok = runJob("xmipp_transform_filter -i %s.vol -o %sFiltered.vol --fourier low_pass %f 0.02 --sampling 1 -v 0"%(tmp_name,tmp_name,maxRes))
+        ok = runJob("xmipp_transform_filter -i %s.vol -o %sFiltered.vol --fourier low_pass %f 0.02 --sampling 1 -v 0"%(fnHash,fnHash,maxRes))
     # Create mask by thresholding
     if ok:
-        ok = runJob("xmipp_transform_threshold -i %sFiltered.vol -o %sMask.vol --select below %f --substitute binarize -v 0"%(tmp_name,tmp_name,threshold))
+        ok = runJob("xmipp_transform_threshold -i %sFiltered.vol -o %sMask.vol --select below %f --substitute binarize -v 0"%(fnHash,fnHash,threshold))
     # Obtain volumes
     if ok:
-        Vf = xmippLib.Image("%sFiltered.vol"%tmp_name).getData()
-        Vmask = xmippLib.Image("%sMask.vol"%tmp_name).getData()
+        Vf = xmippLib.Image("%sFiltered.vol"%fnHash).getData()
+        Vmask = xmippLib.Image("%sMask.vol"%fnHash).getData()
     else:
         Vf, Vmask = None, None
 
     if Vf is not None and Vmask is not None:
-        ok = runJob("xmipp_volume_from_pdb  -i %s_alpha.pdb -o %s_alpha --sampling 1 --size %d -v 0"%(tmp_name,tmp_name, Vf.shape[0]))
+        ok = runJob("xmipp_volume_from_pdb  -i %s_alpha.pdb -o %s_alpha --sampling 1 --size %d -v 0"%(fnHash,fnHash, Vf.shape[0]))
     # Create mask by thresholding
     if ok:
-        ok = runJob("xmipp_transform_threshold -i %s_alpha.vol -o %sMask_alpha.vol --select below %f --substitute binarize -v 0"%(tmp_name,tmp_name,alpha_threshold))
+        ok = runJob("xmipp_transform_threshold -i %s_alpha.vol -o %sMask_alpha.vol --select below %f --substitute binarize -v 0"%(fnHash,fnHash,alpha_threshold))
     # Save mask
     if ok:
-        Vmask_alpha = xmippLib.Image("%sMask_alpha.vol"%tmp_name).getData()
+        Vmask_alpha = xmippLib.Image("%sMask_alpha.vol"%fnHash).getData()
     else:
         Vmask_alpha = None
     #Remove all temporary files produced 
-#    os.system("rm -f %s*"%tmp_name)
+    os.system("rm -f %s*"%fnHash)
 
     return Vf, Vmask, Vmask_alpha
 
@@ -104,7 +109,6 @@ def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
 if __name__ == "__main__":
     # Define variables
     PDB = 'nrPDB/PDB/1AGC.pdb'
-    tmp_name = 'nrPDB/Examples/1AGC'
     maxRes = 5.0
     threshold = 0.5
     alpha_threshold = 0.5
@@ -113,7 +117,7 @@ if __name__ == "__main__":
     SE = np.ones((11,11,11))
 
     # Get volumes 
-    Vf, Vmask, Vmask_alpha = simulate_volume(PDB, tmp_name, maxRes, threshold, alpha_threshold, minresidues)
+    Vf, Vmask, Vmask_alpha = simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues)
 
     # Get alpha centroids
     alpha_centroids = get_alpha_centroids(Vmask_alpha)
