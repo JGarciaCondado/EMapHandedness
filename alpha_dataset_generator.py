@@ -49,7 +49,7 @@ def simulate_volume(PDB, tmp_name, maxRes, threshold, alpha_threshold, minresidu
     else:
         Vmask_alpha = None
     #Remove all temporary files produced 
-    os.system("rm -f %s*"%tmp_name)
+#    os.system("rm -f %s*"%tmp_name)
 
     return Vf, Vmask, Vmask_alpha
 
@@ -84,10 +84,12 @@ def extract_boxes(Vf, centroids, box_dim):
     return boxes
 
 def get_mask_no_alpha(Vmask, Vmask_alpha, SE):
-    # Union of not alpha and mask gives those that have no alpha
-    Vmask_no_alpha = np.logical_and(Vmask, np.logical_not(Vmask_alpha).astype(Vmask.dtype)).astype(Vmask.dtype)
-    # Erode to minimize overlaps with with alpha boxes
-    Vmask_no_alpha = binary_erosion(Vmask_no_alpha, structure=np.ones((3,3,3))).astype(Vmask.dtype)
+    # First obtain Not Alpha
+    Vmask_not_alpha = np.logical_not(Vmask_alpha).astype(Vmask.dtype)
+    # Erode not alpha with SE
+    Vmask_not_alpha_eroded = binary_erosion(Vmask_not_alpha, structure=SE).astype(Vmask.dtype)
+    # Find union with Vmask so that areas away from alpha remain unchanged
+    Vmask_no_alpha = np.logical_and(Vmask, Vmask_not_alpha_eroded).astype(Vmask.dtype)
 
     return Vmask_no_alpha
 
@@ -108,7 +110,7 @@ if __name__ == "__main__":
     alpha_threshold = 0.5
     minresidues = 7
     box_dim = 11
-    SE = np.ones((7,7,7))
+    SE = np.ones((11,11,11))
 
     # Get volumes 
     Vf, Vmask, Vmask_alpha = simulate_volume(PDB, tmp_name, maxRes, threshold, alpha_threshold, minresidues)
