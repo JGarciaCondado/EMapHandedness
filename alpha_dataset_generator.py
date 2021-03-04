@@ -106,16 +106,7 @@ def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
 
     return possible_centroids[centroid_ids]
 
-if __name__ == "__main__":
-    # Define variables
-    PDB = 'nrPDB/PDB/1AGC.pdb'
-    maxRes = 5.0
-    threshold = 0.5
-    alpha_threshold = 0.5
-    minresidues = 7
-    box_dim = 11
-    SE = np.ones((11,11,11))
-
+def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues):
     # Get volumes 
     Vf, Vmask, Vmask_alpha = simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues)
 
@@ -133,3 +124,17 @@ if __name__ == "__main__":
 
     # Extract no alpha boxes
     no_alpha_boxes = extract_boxes(Vf, no_alpha_centroids, box_dim)
+
+    return alpha_boxes, no_alpha_boxes
+
+if __name__ == "__main__":
+    # Define variables
+    PDB = 'nrPDB/PDB/1AGC.pdb'
+    maxRes = 5.0
+    threshold = 0.5
+    alpha_threshold = 0.5
+    minresidues = 7
+    box_dim = 11
+    SE = np.ones((11,11,11))
+
+    alpha_boxes, no_alpha_boxes = extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues)
