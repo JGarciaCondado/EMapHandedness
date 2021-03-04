@@ -1,13 +1,11 @@
 import subprocess
 import xmippLib
 import os
-import sys
 import string
 import random
 import numpy as np
 from scipy.ndimage.morphology import binary_erosion
 from skimage import measure
-np.set_printoptions(threshold=sys.maxsize)
 
 def runJob( cmd, cwd='./'):
     """ Run command in a supbrocess using the xmipp3 environment
@@ -19,6 +17,9 @@ def runJob( cmd, cwd='./'):
     return 0 == p.returncode
 
 def simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues):
+    """ Simulate PDB to create Electron Density Map obtain mask by thresholding
+        and also include a mask of where the alpha helix are found
+    """
     # Create temporary name
     fnRandom = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(32)])
     fnHash = "nrPDB/tmp"+fnRandom
@@ -59,7 +60,9 @@ def simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues):
     return Vf, Vmask, Vmask_alpha
 
 def get_alpha_centroids(Vmask_alpha):
-    # Erode mask so as to retain center of alpha helix and seperate different helices
+    """ From the alpha mask obtain the centroids of each othe alpha helices
+    """
+    # Erode mask so as to retain center of alpha helix and seperate helices that might have merged in sampling
     Vmask_alpha_outline = binary_erosion(Vmask_alpha, structure=np.ones((3,3,3))).astype(Vmask_alpha.dtype)
     # Label different regions
     Vmask_alpha_objects = measure.label(Vmask_alpha_outline)
@@ -79,6 +82,8 @@ def get_alpha_centroids(Vmask_alpha):
     return alpha_centroids
 
 def extract_boxes(Vf, centroids, box_dim):
+    """ Given a set of cordinates and dimensions extract boxes at that point
+    """
     boxes = []
     # Box half width assumes dimension must be odd
     box_hw = int((box_dim-1)/2)
@@ -89,6 +94,8 @@ def extract_boxes(Vf, centroids, box_dim):
     return boxes
 
 def get_mask_no_alpha(Vmask, Vmask_alpha, SE):
+    """ Obtain a mask that contains those parts that do not have alpha helices
+    """
     # First obtain Not Alpha
     Vmask_not_alpha = np.logical_not(Vmask_alpha).astype(Vmask.dtype)
     # Erode not alpha with SE
@@ -99,6 +106,8 @@ def get_mask_no_alpha(Vmask, Vmask_alpha, SE):
     return Vmask_no_alpha
 
 def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
+    """ Randomly select n centroids from mask
+    """
     # Obtain coordinates where mask is 1
     possible_centroids = np.argwhere(Vmask_no_alpha == 1.0)
     # Randomly choose n of this
@@ -107,31 +116,32 @@ def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
     return possible_centroids[centroid_ids]
 
 def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues):
+    """ For a PDB extract alpha helices and boxes not containg alpha helices
+    """
     # Get volumes 
     Vf, Vmask, Vmask_alpha = simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues)
-
     # Get alpha centroids
     alpha_centroids = get_alpha_centroids(Vmask_alpha)
-
     # Extract alpha boxes
     alpha_boxes = extract_boxes(Vf, alpha_centroids, box_dim)
-
     # Get volume mask with no alphas
     Vmask_no_alpha = get_mask_no_alpha(Vmask, Vmask_alpha, SE)
-
     # Sample centroids from mask containing no alphas
     no_alpha_centroids = get_no_alpha_centroids(Vmask_no_alpha, len(alpha_centroids))
-
     # Extract no alpha boxes
     no_alpha_boxes = extract_boxes(Vf, no_alpha_centroids, box_dim)
 
     return alpha_boxes, no_alpha_boxes
 
 def create_directory(path):
+    """ Create directory if it does not exist
+    """
     if not os.path.isdir(path):
         os.mkdir(path)
 
 def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_threshold, minresidues, box_dim):
+    """ Creat the whole dataset from a directory containg all the PDBS
+    """
     # Create dataset direcotry if it doesn't exist
     create_directory(dataset_root)
     for PDB in os.listdir(data_root):
