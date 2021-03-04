@@ -127,14 +127,40 @@ def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues):
 
     return alpha_boxes, no_alpha_boxes
 
+def create_directory(path):
+    if not os.path.isdir(path):
+        os.mkdir(path)
+
+def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_threshold, minresidues, box_dim):
+    # Create dataset direcotry if it doesn't exist
+    create_directory(dataset_root)
+    for PDB in os.listdir(data_root):
+        # Ensure we are working with pdb files
+        if PDB[-4:] != '.pdb':
+            continue
+        #Obtain boxes
+        alpha_boxes, no_alpha_boxes = extract_boxes_PDB(data_root+PDB, maxRes, threshold, alpha_threshold, minresidues)
+        # Create directory with pdb name
+        create_directory(dataset_root+PDB[:-4])
+        # Create subdirecotries to store alpha and no alpha
+        create_directory(dataset_root+PDB[:-4]+'/alpha')
+        create_directory(dataset_root+PDB[:-4]+'/no_alpha')
+        # Save the different boxes
+        for i, box in enumerate(alpha_boxes):
+            np.save(dataset_root+PDB[:-4]+'/alpha/'+'box%d.npy'%i, box)
+        for i, box in enumerate(no_alpha_boxes):
+            np.save(dataset_root+PDB[:-4]+'/no_alpha/'+'box%d.npy'%i, box)
+
 if __name__ == "__main__":
     # Define variables
-    PDB = 'nrPDB/PDB/1AGC.pdb'
+    data_root = 'nrPDB/PDB/'
+    dataset_root = 'nrPDB/Dataset/'
     maxRes = 5.0
     threshold = 0.5
     alpha_threshold = 0.5
     minresidues = 7
     box_dim = 11
-    SE = np.ones((11,11,11))
+    SE = np.ones((3,3,3))
 
-    alpha_boxes, no_alpha_boxes = extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues)
+    # Create dataset
+    create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_threshold, minresidues, box_dim)
