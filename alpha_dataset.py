@@ -15,10 +15,11 @@ class AlphaDataset(Dataset):
         return len(self.dataset_table.index)
 
     def __getitem__(self, idx):
-        pdb, box_type, box_n = self.dataset_table.iloc[idx, :]
+        pdb, box_type, box_n, label = self.dataset_table.iloc[idx, :]
         box_id = os.path.join(dataset_root, pdb, box_type, 'box%s.npy'%box_n)
         box = torch.from_numpy(np.load(box_id))
-        return box
+        label =  torch.tensor(float(label))
+        return (label, box)
 
     def _init_dataset(self):
         dataset_info = []
@@ -26,15 +27,19 @@ class AlphaDataset(Dataset):
             pdb_folder = os.path.join(dataset_root, PDB)
             for box_type in os.listdir(pdb_folder):
                 boxes_folder = os.path.join(pdb_folder, box_type)
+                if box_type == 'alpha':
+                    label = 1
+                else:
+                    label = 0
                 for box in os.listdir(boxes_folder):
-                    dataset_info.append([PDB, box_type, box[3:-4]])
-        self.dataset_table = pd.DataFrame(dataset_info, columns=['PDB', 'Box Type', 'Number'])
+                    dataset_info.append([PDB, box_type, box[3:-4], label])
+        self.dataset_table = pd.DataFrame(dataset_info, columns=['PDB', 'Box Type', 'Number', 'Label'])
 
 if __name__ == '__main__':
     # Variables
     dataset_root = 'nrPDB/Dataset'
     # Geenerate Dataset
     dataset = AlphaDataset(dataset_root)
-    loader = DataLoader(dataset, batch_size=5,shuffle=True,num_workers=2)
+    loader = DataLoader(dataset, batch_size=64,shuffle=True,num_workers=2)
     for i, batch in enumerate(loader):
-        print(i, batch.shape)
+        print(i, batch)
