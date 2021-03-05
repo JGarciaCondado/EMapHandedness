@@ -88,9 +88,9 @@ def extract_boxes(Vf, centroids, box_dim):
     # Box half width assumes dimension must be odd
     box_hw = int((box_dim-1)/2)
     for centroid in centroids:
-        boxes.append(Vf[centroid[0]-box_hw:centroid[0]+box_hw,
-                        centroid[1]-box_hw:centroid[1]+box_hw,
-                        centroid[2]-box_hw:centroid[2]+box_hw])
+        boxes.append(Vf[centroid[0]-box_hw:centroid[0]+box_hw+1,
+                        centroid[1]-box_hw:centroid[1]+box_hw+1,
+                        centroid[2]-box_hw:centroid[2]+box_hw+1])
     return boxes
 
 def get_mask_no_alpha(Vmask, Vmask_alpha, SE):
@@ -115,7 +115,7 @@ def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
 
     return possible_centroids[centroid_ids]
 
-def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues):
+def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues, box_dim):
     """ For a PDB extract alpha helices and boxes not containg alpha helices
     """
     # Get volumes 
@@ -149,7 +149,7 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
         if PDB[-4:] != '.pdb':
             continue
         #Obtain boxes
-        alpha_boxes, no_alpha_boxes = extract_boxes_PDB(data_root+PDB, maxRes, threshold, alpha_threshold, minresidues)
+        alpha_boxes, no_alpha_boxes = extract_boxes_PDB(data_root+PDB, maxRes, threshold, alpha_threshold, minresidues, box_dim)
         # Create directory with pdb name
         create_directory(dataset_root+PDB[:-4])
         # Create subdirecotries to store alpha and no alpha
