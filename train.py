@@ -5,11 +5,13 @@ import os
 
 if __name__ == '__main__':
     # Variables
-    dataset_root = 'nrPDB/Dataset'
     torchDataset_root = 'nrPDB/torchDataset'
+    batch_size = 64
     # Load Dataset
-    dataset = torch.load(os.path.join(torchDataset_root, 'Dataset'))
-    # Loader
-    dataloader = DataLoader(dataset, batch_size=64)
-    for batch in dataloader:
-        print(batch[0])
+    traindataset = torch.load(os.path.join(torchDataset_root, 'trainDataset'))
+    valdataset = torch.load(os.path.join(torchDataset_root, 'valDataset'))
+    # Create Loaders
+    trainloader = DataLoader(traindataset, batch_size=batch_size,
+                             shuffle=True, num_workers=2)
+    valloader = DataLoader(valdataset, batch_size=batch_size,
+                             shuffle=True, num_workers=2)

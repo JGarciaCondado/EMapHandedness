@@ -44,7 +44,15 @@ if __name__ == '__main__':
     # Variables
     dataset_root = 'nrPDB/Dataset'
     torchDataset_root = 'nrPDB/torchDataset'
+    trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
     # Generate Dataset
     dataset = AlphaDataset(dataset_root)
-    # Save Dataset
-    torch.save(dataset, os.path.join(torchDataset_root, 'Dataset'))
+    # Split into different Datasets
+    trainsize = int(len(dataset)*trainsplit)
+    valsize = int(len(dataset)*valsplit)
+    testsize = len(dataset)-trainsize-valsize
+    trainDataset, valDataset, testDataset = torch.utils.data.random_split(dataset, [trainsize, valsize, testsize])
+    # Save Datasets
+    torch.save(trainDataset, os.path.join(torchDataset_root, 'trainDataset'))
+    torch.save(valDataset, os.path.join(torchDataset_root, 'valDataset'))
+    torch.save(testDataset, os.path.join(torchDataset_root, 'testDataset'))
