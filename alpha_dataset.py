@@ -6,6 +6,8 @@ import torch
 
 
 class AlphaDataset(Dataset):
+    """ Torch Dataset object that load the boxes previously created
+    """
     def __init__(self, dataset_root):
         self.dataset_root = dataset_root
         self.dataset_table = None
@@ -16,12 +18,15 @@ class AlphaDataset(Dataset):
 
     def __getitem__(self, idx):
         pdb, box_type, box_n, label = self.dataset_table.iloc[idx, :]
-        box_id = os.path.join(dataset_root, pdb, box_type, 'box%s.npy'%box_n)
+        box_id = os.path.join(self.dataset_root, pdb, box_type, 'box%s.npy'%box_n)
         box = torch.from_numpy(np.load(box_id))
         label =  torch.tensor(float(label))
         return (label, box)
 
     def _init_dataset(self):
+        """ Create pandas DataFrame to store all the infromation of all the available
+            boxes so that later they can be loaded when needed instead of loading all arrays.
+        """
         dataset_info = []
         for PDB in os.listdir(self.dataset_root):
             pdb_folder = os.path.join(dataset_root, PDB)
@@ -38,8 +43,8 @@ class AlphaDataset(Dataset):
 if __name__ == '__main__':
     # Variables
     dataset_root = 'nrPDB/Dataset'
-    # Geenerate Dataset
+    torchDataset_root = 'nrPDB/torchDataset'
+    # Generate Dataset
     dataset = AlphaDataset(dataset_root)
-    loader = DataLoader(dataset, batch_size=64,shuffle=True,num_workers=2)
-    for i, batch in enumerate(loader):
-        print(i, batch)
+    # Save Dataset
+    torch.save(dataset, os.path.join(torchDataset_root, 'Dataset'))
