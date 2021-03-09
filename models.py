@@ -1,4 +1,8 @@
+import torch
+import time
+
 from torch import nn
+from torch import optim
 
 class AlphaNet(nn.Module):
     """ 3D CNN to estiamte the probability that there is an alpha helix in the center of the box.
@@ -46,3 +50,112 @@ class AlphaNet(nn.Module):
         x = self.linear2(x)
         x = self.sigmoid(x)
         return x
+
+class AlphaNet_extended(AlphaNet):
+
+    def __init__(self,epochs=100,lr=0.001, verbose=1):
+
+        super().__init__()
+
+        self.lr = lr #Learning Rate
+
+        self.optim = optim.Adam(self.parameters(), self.lr)
+
+        self.epochs = epochs
+
+        self.verbose = verbose
+
+        self.criterion = nn.BCELoss()
+
+        # A list to store the loss evolution along training
+
+        self.loss_during_training = []
+
+        self.valid_loss_during_training = []
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        self.to(self.device)
+
+    def trainloop(self,trainloader,validloader):
+
+        # Optimization Loop
+
+        for e in range(int(self.epochs)):
+
+            start_time = time.time()
+
+            # Random data permutation at each epoch
+
+            running_loss = 0.
+
+            for labels, images in trainloader:
+
+                # Move input and label tensors to the default device
+                images, labels = images.to(self.device), labels.to(self.device)
+
+                #Reset Gradients!
+                self.optim.zero_grad()
+
+                out = self.forward(images)
+
+                loss = self.criterion(out,labels)
+
+                running_loss += loss.item()
+
+                #Compute gradients
+                loss.backward()
+
+                #SGD stem
+                self.optim.step()
+
+
+            self.loss_during_training.append(running_loss/len(trainloader))
+
+            # Validation Loss
+
+            # Turn off gradients for validation, saves memory and computations
+            with torch.no_grad():
+
+                running_loss = 0.
+
+                for labels, images in validloader:
+
+                    # Move input and label tensors to the default device
+                    images, labels = images.to(self.device), labels.to(self.device)
+
+                    # Compute output for input minibatch
+                    out = self.forward(images)
+
+                    #Your code here
+                    loss = self.criterion(out,labels)
+
+                    running_loss += loss.item()
+
+                self.valid_loss_during_training.append(running_loss/len(validloader))
+
+
+            if(e % self.verbose == 0):
+
+                print("Epoch %d. Training loss: %f, Validation loss: %f, Time per epoch: %f seconds"
+                      %(e,self.loss_during_training[-1],self.valid_loss_during_training[-1],
+                       (time.time() - start_time)))
+
+    def eval_performance(self,dataloader):
+
+        loss = 0
+        accuracy = 0
+
+        # Turn off gradients for validation, saves memory and computations
+        with torch.no_grad():
+
+            for images,labels in dataloader:
+                # Move input and label tensors to the default device
+                images, labels = images.to(self.device), labels.to(self.device)
+                probs = self.forward(images)
+
+                top_p, top_class = probs.topk(1, dim=1)
+                equals = (top_class == labels.view(images.shape[0], 1))
+                accuracy += torch.mean(equals.type(torch.FloatTensor))
+
+            return accuracy/len(dataloader)

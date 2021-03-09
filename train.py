@@ -1,7 +1,9 @@
-from torch.utils.data import DataLoader
-from alpha_dataset import AlphaDataset
 import torch
 import os
+
+from torch.utils.data import DataLoader
+from alpha_dataset import AlphaDataset
+from models import AlphaNet_extended
 
 if __name__ == '__main__':
     # Variables
@@ -15,3 +17,6 @@ if __name__ == '__main__':
                              shuffle=True, num_workers=2)
     valloader = DataLoader(valdataset, batch_size=batch_size,
                              shuffle=True, num_workers=2)
+    # Initialize model
+    model = AlphaNet_extended(verbose=20)
+    model.trainloop(trainloader, valloader)
