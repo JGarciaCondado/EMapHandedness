@@ -99,7 +99,7 @@ class AlphaNet_extended(AlphaNet):
 
                 out = self.forward(images)
 
-                loss = self.criterion(out,labels)
+                loss = self.criterion(out.squeeze(),labels)
 
                 running_loss += loss.item()
 
@@ -128,7 +128,7 @@ class AlphaNet_extended(AlphaNet):
                     out = self.forward(images)
 
                     #Your code here
-                    loss = self.criterion(out,labels)
+                    loss = self.criterion(out.squeeze(),labels)
 
                     running_loss += loss.item()
 
