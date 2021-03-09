@@ -21,6 +21,8 @@ class AlphaDataset(Dataset):
         pdb, box_type, box_n, label = self.dataset_table.iloc[idx, :]
         box_id = os.path.join(self.dataset_root, pdb, box_type, 'box%s.npy'%box_n)
         box = torch.from_numpy(self.transform(np.load(box_id)))
+        # Add extra dimension as torch expects a channel dimension
+        box = box.unsqueeze(0)
         label =  torch.tensor(float(label))
         return (label, box)
 
