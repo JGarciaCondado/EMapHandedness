@@ -8,9 +8,10 @@ import torch
 class AlphaDataset(Dataset):
     """ Torch Dataset object that load the boxes previously created
     """
-    def __init__(self, dataset_root):
+    def __init__(self, dataset_root, c):
         self.dataset_root = dataset_root
         self.dataset_table = None
+        self.c = c
         self._init_dataset()
 
     def __len__(self):
@@ -19,7 +20,7 @@ class AlphaDataset(Dataset):
     def __getitem__(self, idx):
         pdb, box_type, box_n, label = self.dataset_table.iloc[idx, :]
         box_id = os.path.join(self.dataset_root, pdb, box_type, 'box%s.npy'%box_n)
-        box = torch.from_numpy(np.load(box_id))
+        box = torch.from_numpy(self.transform(np.load(box_id)))
         label =  torch.tensor(float(label))
         return (label, box)
 
@@ -40,13 +41,27 @@ class AlphaDataset(Dataset):
                     dataset_info.append([PDB, box_type, box[3:-4], label])
         self.dataset_table = pd.DataFrame(dataset_info, columns=['PDB', 'Box Type', 'Number', 'Label'])
 
+    def transform(self, box):
+        """ Normalizes boxes to the range 0 to 1.
+        """
+        # Change negative values to zeros
+        box[box<0.0] = 0.0
+        # Change values greater than c to c
+        box[box>self.c] = self.c
+        # Normalize to [0,1]
+        box = (box-np.min(box))/(np.max(box)-np.min(box))
+
+        return box
+
+
 if __name__ == '__main__':
     # Variables
     dataset_root = 'nrPDB/Dataset'
     torchDataset_root = 'nrPDB/torchDataset'
     trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
+    c = 5
     # Generate Dataset
-    dataset = AlphaDataset(dataset_root)
+    dataset = AlphaDataset(dataset_root, c)
     # Split into different Datasets
     trainsize = int(len(dataset)*trainsplit)
     valsize = int(len(dataset)*valsplit)
