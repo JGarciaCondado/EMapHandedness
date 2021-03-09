@@ -1,5 +1,6 @@
 import torch
 import time
+import numpy as np
 
 from torch import nn
 from torch import optim
@@ -141,21 +142,22 @@ class AlphaNet_extended(AlphaNet):
                       %(e,self.loss_during_training[-1],self.valid_loss_during_training[-1],
                        (time.time() - start_time)))
 
-    def eval_performance(self,dataloader):
+    def eval_performance(self,dataloader,num_batches=10,threshold=0.5):
 
-        loss = 0
         accuracy = 0
 
         # Turn off gradients for validation, saves memory and computations
         with torch.no_grad():
 
-            for images,labels in dataloader:
+            it_images = iter(dataloader)
+
+            for e in range(int(num_batches)):
+                labels, images = next(it_images)
                 # Move input and label tensors to the default device
                 images, labels = images.to(self.device), labels.to(self.device)
                 probs = self.forward(images)
+                pred_labels = probs.squeeze().numpy()>=threshold
+                n_correct = np.sum(pred_labels == labels.numpy().astype('bool'))
+                accuracy += n_correct/len(labels)
 
-                top_p, top_class = probs.topk(1, dim=1)
-                equals = (top_class == labels.view(images.shape[0], 1))
-                accuracy += torch.mean(equals.type(torch.FloatTensor))
-
-            return accuracy/len(dataloader)
+        return accuracy/int(num_batches)
