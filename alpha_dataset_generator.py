@@ -6,6 +6,7 @@ import random
 import numpy as np
 from scipy.ndimage.morphology import binary_erosion
 from skimage import measure
+from tqdm import tqdm
 
 def runJob( cmd, cwd='./'):
     """ Run command in a supbrocess using the xmipp3 environment
@@ -144,7 +145,7 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
     """
     # Create dataset direcotry if it doesn't exist
     create_directory(dataset_root)
-    for PDB in os.listdir(data_root):
+    for PDB in tqdm(os.listdir(data_root)):
         # Ensure we are working with pdb files
         if PDB[-4:] != '.pdb':
             continue
