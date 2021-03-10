@@ -5,6 +5,7 @@ __pycache__/
 
 # Ignore models
 *.h5
+Models/
 
 # Ignore logs
 logs/

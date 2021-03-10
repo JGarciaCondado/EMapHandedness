@@ -1,6 +1,7 @@
 import torch
 import time
 import numpy as np
+import os
 
 from torch import nn
 from torch import optim
@@ -54,7 +55,8 @@ class AlphaNet(nn.Module):
 
 class AlphaNet_extended(AlphaNet):
 
-    def __init__(self,epochs=100,lr=0.001,verbose=1,num_batches=10):
+    def __init__(self, epochs=100, lr=0.001,verbose=1,num_batches=10, save_folder='Models',
+                 restore=False, save_e=1, file_name='model_checkpoint.pth'):
 
         super().__init__()
 
@@ -69,6 +71,16 @@ class AlphaNet_extended(AlphaNet):
         self.num_batches = num_batches
 
         self.criterion = nn.BCELoss()
+
+        self.save_folder = save_folder
+
+        self.file_name = file_name
+
+        self.save_e = save_e
+
+        if(restore==True):
+            state_dict = torch.load(os.path.join(self.save_folder,self.file_name))
+            self.load_state_dict(state_dict)
 
         # A list to store the loss evolution along training
 
@@ -137,9 +149,11 @@ class AlphaNet_extended(AlphaNet):
 
                 self.valid_loss_during_training.append(running_loss/len(validloader))
 
-
+            if(e % self.save_e == 0):
+                torch.save(self.state_dict(), os.path.join(self.save_folder, str(e)+self.file_name))
+                np.save(os.path.join(self.save_folder, 'valloss'), self.valid_loss_during_training)
+                np.save(os.path.join(self.save_folder, 'trainloss'), self.loss_during_training)
             if(e % self.verbose == 0):
-
                 print("Epoch %d. Training loss: %f, Validation loss: %f, Train accuracy: %f Validation accuracy %f Time per epoch: %f seconds"
                       %(e,self.loss_during_training[-1],self.valid_loss_during_training[-1],
                         self.eval_performance(trainloader, self.num_batches),

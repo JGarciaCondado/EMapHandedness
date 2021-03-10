@@ -27,6 +27,14 @@ if __name__ == '__main__':
     model.trainloop(trainloader, valloader)
 
     # Evaluate performance
-    print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=2))
-    print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=1))
-    print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=1))
+    print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
+    print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=len(valloader)))
+    print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=len(testloader)))
+
+    # Load different model
+    model = AlphaNet_extended(restore=True, file_name='25model_checkpoint.pth')
+
+    # Evaluate performance
+    print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
+    print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=len(valloader)))
+    print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=len(testloader)))
