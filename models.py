@@ -54,7 +54,7 @@ class AlphaNet(nn.Module):
 
 class AlphaNet_extended(AlphaNet):
 
-    def __init__(self,epochs=100,lr=0.001, verbose=1):
+    def __init__(self,epochs=100,lr=0.001,verbose=1,num_batches=10):
 
         super().__init__()
 
@@ -65,6 +65,8 @@ class AlphaNet_extended(AlphaNet):
         self.epochs = epochs
 
         self.verbose = verbose
+
+        self.num_batches = num_batches
 
         self.criterion = nn.BCELoss()
 
@@ -138,9 +140,11 @@ class AlphaNet_extended(AlphaNet):
 
             if(e % self.verbose == 0):
 
-                print("Epoch %d. Training loss: %f, Validation loss: %f, Time per epoch: %f seconds"
+                print("Epoch %d. Training loss: %f, Validation loss: %f, Train accuracy: %f Validation accuracy %f Time per epoch: %f seconds"
                       %(e,self.loss_during_training[-1],self.valid_loss_during_training[-1],
-                       (time.time() - start_time)))
+                        self.eval_performance(trainloader, self.num_batches),
+                        self.eval_performance(validloader, self.num_batches),
+                        (time.time() - start_time)))
 
     def eval_performance(self,dataloader,num_batches=10,threshold=0.5):
 

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     testloader = DataLoader(testdataset, batch_size=batch_size,
                              shuffle=True, num_workers=2)
     # Initialize model and train model
-    model = AlphaNet_extended(epochs=100, verbose=20)
+    model = AlphaNet_extended(epochs=50, verbose=1, num_batches=1)
     model.trainloop(trainloader, valloader)
 
     # Evaluate performance
