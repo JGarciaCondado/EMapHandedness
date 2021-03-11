@@ -149,6 +149,9 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
         # Ensure we are working with pdb files
         if PDB[-4:] != '.pdb':
             continue
+        # If PDB dataset already there in case errors cause restart
+        if os.path.isdir(dataset_root+PDB[:-4]):
+            continue
         #Obtain boxes
         alpha_boxes, no_alpha_boxes = extract_boxes_PDB(data_root+PDB, maxRes, threshold, alpha_threshold, minresidues, box_dim)
         # Create directory with pdb name
