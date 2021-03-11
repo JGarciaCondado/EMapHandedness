@@ -165,9 +165,14 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
             create_directory(dataset_root+PDB[:-4]+'/no_alpha')
             # Save the different boxes
             for i, box in enumerate(alpha_boxes):
-                np.save(dataset_root+PDB[:-4]+'/alpha/'+'box%d.npy'%i, box)
+                # Check correct box dimensions it might be boxes were in a corner
+                # and have uneven box dimensions
+                if box.shape == (box_dim, box_dim, box_dim):
+                    print('hey')
+                    np.save(dataset_root+PDB[:-4]+'/alpha/'+'box%d.npy'%i, box)
             for i, box in enumerate(no_alpha_boxes):
-                np.save(dataset_root+PDB[:-4]+'/no_alpha/'+'box%d.npy'%i, box)
+                if box.shape == (box_dim, box_dim, box_dim):
+                    np.save(dataset_root+PDB[:-4]+'/no_alpha/'+'box%d.npy'%i, box)
 
 if __name__ == "__main__":
     # Define variables
