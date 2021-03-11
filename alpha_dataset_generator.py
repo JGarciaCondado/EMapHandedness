@@ -168,7 +168,6 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
                 # Check correct box dimensions it might be boxes were in a corner
                 # and have uneven box dimensions
                 if box.shape == (box_dim, box_dim, box_dim):
-                    print('hey')
                     np.save(dataset_root+PDB[:-4]+'/alpha/'+'box%d.npy'%i, box)
             for i, box in enumerate(no_alpha_boxes):
                 if box.shape == (box_dim, box_dim, box_dim):
