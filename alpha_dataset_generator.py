@@ -121,6 +121,9 @@ def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues, box_
     """
     # Get volumes 
     Vf, Vmask, Vmask_alpha = simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues)
+    # Exit if simulation unsuccesfull
+    if Vf is None or Vmask is None or Vmask_alpha is None:
+        return None, None
     # Get alpha centroids
     alpha_centroids = get_alpha_centroids(Vmask_alpha)
     # Extract alpha boxes
@@ -154,16 +157,17 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
             continue
         #Obtain boxes
         alpha_boxes, no_alpha_boxes = extract_boxes_PDB(data_root+PDB, maxRes, threshold, alpha_threshold, minresidues, box_dim)
-        # Create directory with pdb name
-        create_directory(dataset_root+PDB[:-4])
-        # Create subdirecotries to store alpha and no alpha
-        create_directory(dataset_root+PDB[:-4]+'/alpha')
-        create_directory(dataset_root+PDB[:-4]+'/no_alpha')
-        # Save the different boxes
-        for i, box in enumerate(alpha_boxes):
-            np.save(dataset_root+PDB[:-4]+'/alpha/'+'box%d.npy'%i, box)
-        for i, box in enumerate(no_alpha_boxes):
-            np.save(dataset_root+PDB[:-4]+'/no_alpha/'+'box%d.npy'%i, box)
+        if alpha_boxes is not None or no_alpha_boxes is not None:
+            # Create directory with pdb name
+            create_directory(dataset_root+PDB[:-4])
+            # Create subdirecotries to store alpha and no alpha
+            create_directory(dataset_root+PDB[:-4]+'/alpha')
+            create_directory(dataset_root+PDB[:-4]+'/no_alpha')
+            # Save the different boxes
+            for i, box in enumerate(alpha_boxes):
+                np.save(dataset_root+PDB[:-4]+'/alpha/'+'box%d.npy'%i, box)
+            for i, box in enumerate(no_alpha_boxes):
+                np.save(dataset_root+PDB[:-4]+'/no_alpha/'+'box%d.npy'%i, box)
 
 if __name__ == "__main__":
     # Define variables
