@@ -104,15 +104,15 @@ class AlphaNet_extended(AlphaNet):
 
             running_loss = 0.
 
-            for labels, images in trainloader:
+            for labels, boxes in trainloader:
 
                 # Move input and label tensors to the default device
-                images, labels = images.to(self.device), labels.to(self.device)
+                boxes, labels = boxes.to(self.device), labels.to(self.device)
 
                 #Reset Gradients!
                 self.optim.zero_grad()
 
-                out = self.forward(images)
+                out = self.forward(boxes)
 
                 loss = self.criterion(out.squeeze(),labels)
 
@@ -134,13 +134,13 @@ class AlphaNet_extended(AlphaNet):
 
                 running_loss = 0.
 
-                for labels, images in validloader:
+                for labels, boxes in validloader:
 
                     # Move input and label tensors to the default device
-                    images, labels = images.to(self.device), labels.to(self.device)
+                    boxes, labels = boxes.to(self.device), labels.to(self.device)
 
                     # Compute output for input minibatch
-                    out = self.forward(images)
+                    out = self.forward(boxes)
 
                     #Your code here
                     loss = self.criterion(out.squeeze(),labels)
@@ -167,15 +167,15 @@ class AlphaNet_extended(AlphaNet):
         # Turn off gradients for validation, saves memory and computations
         with torch.no_grad():
 
-            it_images = iter(dataloader)
+            it_boxes = iter(dataloader)
 
             for e in range(int(num_batches)):
-                labels, images = next(it_images)
+                labels, boxes = next(it_boxes)
                 # Move input and label tensors to the default device
-                images, labels = images.to(self.device), labels.to(self.device)
-                probs = self.forward(images)
-                pred_labels = probs.squeeze().numpy()>=threshold
-                n_correct = np.sum(pred_labels == labels.numpy().astype('bool'))
+                boxes, labels = boxes.to(self.device), labels.to(self.device)
+                probs = self.forward(boxes)
+                pred_labels = probs.cpu().squeeze().numpy()>=threshold
+                n_correct = np.sum(pred_labels == labels.cpu().numpy().astype('bool'))
                 accuracy += n_correct/len(labels)
 
         return accuracy/int(num_batches)
