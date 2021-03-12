@@ -112,9 +112,11 @@ def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
     # Obtain coordinates where mask is 1
     possible_centroids = np.argwhere(Vmask_no_alpha == 1.0)
     # Randomly choose n of this
-    centroid_ids = np.random.choice(len(possible_centroids), n_centroids)
-
-    return possible_centroids[centroid_ids]
+    if len(possible_centroids)>0:
+        centroid_ids = np.random.choice(len(possible_centroids), n_centroids)
+        return possible_centroids[centroid_ids]
+    else:
+        return None
 
 def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues, box_dim):
     """ For a PDB extract alpha helices and boxes not containg alpha helices
@@ -133,7 +135,10 @@ def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues, box_
     # Sample centroids from mask containing no alphas
     no_alpha_centroids = get_no_alpha_centroids(Vmask_no_alpha, len(alpha_centroids))
     # Extract no alpha boxes
-    no_alpha_boxes = extract_boxes(Vf, no_alpha_centroids, box_dim)
+    if no_alpha_centroids is not None:
+        no_alpha_boxes = extract_boxes(Vf, no_alpha_centroids, box_dim)
+    else:
+        no_alpha_boxes = None
 
     return alpha_boxes, no_alpha_boxes
 
@@ -157,7 +162,7 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
             continue
         #Obtain boxes
         alpha_boxes, no_alpha_boxes = extract_boxes_PDB(data_root+PDB, maxRes, threshold, alpha_threshold, minresidues, box_dim)
-        if alpha_boxes is not None or no_alpha_boxes is not None:
+        if alpha_boxes is not None and no_alpha_boxes is not None:
             # Create directory with pdb name
             create_directory(dataset_root+PDB[:-4])
             # Create subdirecotries to store alpha and no alpha
