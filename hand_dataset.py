@@ -5,8 +5,8 @@ from torch.utils.data import Dataset, DataLoader
 import torch
 
 
-class AlphaDataset(Dataset):
-    """ Torch Dataset object that load the boxes previously created
+class HandDataset(Dataset):
+    """ Torch Dataset object that load the boxes previously created and flips them
     """
     def __init__(self, dataset_root, c):
         self.dataset_root = dataset_root
@@ -20,7 +20,10 @@ class AlphaDataset(Dataset):
     def __getitem__(self, idx):
         pdb, box_type, box_n, label = self.dataset_table.iloc[idx, :]
         box_id = os.path.join(self.dataset_root, pdb, box_type, 'box%s.npy'%box_n)
-        box = torch.from_numpy(self.transform(np.load(box_id)))
+        box = self.transform(np.load(box_id))
+        if label:
+            box = np.flip(box, axis=0).copy()
+        box = torch.from_numpy(box)
         # Add extra dimension as torch expects a channel dimension
         box = box.unsqueeze(0)
         label =  torch.tensor(float(label))
@@ -33,14 +36,12 @@ class AlphaDataset(Dataset):
         dataset_info = []
         for PDB in os.listdir(self.dataset_root):
             pdb_folder = os.path.join(dataset_root, PDB)
-            for box_type in os.listdir(pdb_folder):
-                boxes_folder = os.path.join(pdb_folder, box_type)
-                if box_type == 'alpha':
-                    label = 1
-                else:
-                    label = 0
-                for box in os.listdir(boxes_folder):
-                    dataset_info.append([PDB, box_type, box[3:-4], label])
+            box_type = 'alpha'
+            boxes_folder = os.path.join(pdb_folder, box_type)
+            for box in os.listdir(boxes_folder):
+                # Randomly assing label flipped or not flipped
+                label = np.random.choice(2)
+                dataset_info.append([PDB, box_type, box[3:-4], label])
         self.dataset_table = pd.DataFrame(dataset_info, columns=['PDB', 'Box Type', 'Number', 'Label'])
 
     def transform(self, box):
@@ -49,7 +50,7 @@ class AlphaDataset(Dataset):
         # Change negative values to zeros
         box[box<0.0] = 0.0
         # Change values greater than c to c
-        box[box>self.c] = self.c
+#        box[box>self.c] = self.c
         # Normalize to [0,1]
         box = (box-np.min(box))/(np.max(box)-np.min(box))
 
@@ -59,11 +60,11 @@ class AlphaDataset(Dataset):
 if __name__ == '__main__':
     # Variables
     dataset_root = 'nrPDB/Dataset'
-    torchDataset_root = 'nrPDB/torchDataset/alphaDataset'
+    torchDataset_root = 'nrPDB/torchDataset/handDataset'
     trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
     c = 5
     # Generate Dataset
-    dataset = AlphaDataset(dataset_root, c)
+    dataset = HandDataset(dataset_root, c)
     # Split into different Datasets
     trainsize = int(len(dataset)*trainsplit)
     valsize = int(len(dataset)*valsplit)
