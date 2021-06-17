@@ -153,7 +153,7 @@ def create_directory(path):
     if not os.path.isdir(path):
         os.mkdir(path)
 
-def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask):
+def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask, restart=False):
     """ Creat the whole dataset from a directory containg all the PDB
     """
     # Create dataset direcotry if it doesn't exist
@@ -163,7 +163,8 @@ def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask
         if PDB[-4:] != '.pdb':
             continue
         # If PDB dataset already there in case errors cause restart
-        if os.path.isdir(dataset_root+PDB[:-4]):
+        # Ignore if we want to redo the complete dataset
+        if os.path.isdir(dataset_root+PDB[:-4]) and not restart:
             continue
         #Obtain boxes
         SSE_boxes, no_SSE_boxes = extract_boxes_PDB(data_root+PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask)
@@ -195,6 +196,7 @@ if __name__ == "__main__":
     box_dim = 11
     SE_centroids = np.ones((2,2,2))
     SE_noSSEMask = np.ones((3,3,3))
+    restart = True
 
     # Create dataset
-    create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask)
+    create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask, restart)
