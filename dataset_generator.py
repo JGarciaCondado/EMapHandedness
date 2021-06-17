@@ -17,18 +17,23 @@ def runJob( cmd, cwd='./'):
     p.wait()
     return 0 == p.returncode
 
-def simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues):
-    """ Simulate PDB to create Electron Density Map obtain mask by thresholding
-        and also include a mask of where the alpha helix are found
+def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues):
+    """ Simulate PDB to create Electron Density Map, obtain a mask by thresholding
+        and also include a mask of where the SSE of interest are found
     """
     # Create temporary name
     fnRandom = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(32)])
     fnHash = "nrPDB/tmp"+fnRandom
     # Center pdb
     ok = runJob("xmipp_pdb_center -i %s -o %s_centered.pdb"%(PDB,fnHash))
-    # Obtain only alphas
+    # Obtain desired SSE pdb sections
     if ok:
-        ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_alpha.pdb --keep_alpha %d"%(fnHash,fnHash,minresidues))
+        if SSE_type is 'alpha':
+            ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb --keep_alpha %d"%(fnHash,fnHash,minresidues))
+        elif SSE_type is 'beta':
+            ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb --keep_beta %d"%(fnHash,fnHash,minresidues))
+        else:
+            ok = False
     # Sample whole pdb
     if ok:
         ok = runJob("xmipp_volume_from_pdb  -i %s_centered.pdb -o %s --sampling 1 -v 0"%(fnHash,fnHash))
@@ -37,7 +42,7 @@ def simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues):
         ok = runJob("xmipp_transform_filter -i %s.vol -o %sFiltered.vol --fourier low_pass %f 0.02 --sampling 1 -v 0"%(fnHash,fnHash,maxRes))
     # Create mask by thresholding
     if ok:
-        ok = runJob("xmipp_transform_threshold -i %sFiltered.vol -o %sMask.vol --select below %f --substitute binarize -v 0"%(fnHash,fnHash,threshold))
+        ok = runJob("xmipp_transform_threshold -i %sFiltered.vol -o %sMask.vol --select below %f --substitute binarize -v 0"%(fnHash,fnHash,mask_threshold))
     # Obtain volumes
     if ok:
         Vf = xmippLib.Image("%sFiltered.vol"%fnHash).getData()
@@ -46,41 +51,41 @@ def simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues):
         Vf, Vmask = None, None
 
     if Vf is not None and Vmask is not None:
-        ok = runJob("xmipp_volume_from_pdb  -i %s_alpha.pdb -o %s_alpha --sampling 1 --size %d -v 0"%(fnHash,fnHash, Vf.shape[0]))
+        ok = runJob("xmipp_volume_from_pdb  -i %s_SSE.pdb -o %s_SSE --sampling 1 --size %d -v 0"%(fnHash,fnHash, Vf.shape[0]))
     # Create mask by thresholding
     if ok:
-        ok = runJob("xmipp_transform_threshold -i %s_alpha.vol -o %sMask_alpha.vol --select below %f --substitute binarize -v 0"%(fnHash,fnHash,alpha_threshold))
+        ok = runJob("xmipp_transform_threshold -i %s_SSE.vol -o %sMask_SSE.vol --select below %f --substitute binarize -v 0"%(fnHash,fnHash,SSE_mask_threshold))
     # Save mask
     if ok:
-        Vmask_alpha = xmippLib.Image("%sMask_alpha.vol"%fnHash).getData()
+        Vmask_SSE = xmippLib.Image("%sMask_SSE.vol"%fnHash).getData()
     else:
-        Vmask_alpha = None
+        Vmask_SSE = None
     #Remove all temporary files produced 
     os.system("rm -f %s*"%fnHash)
 
-    return Vf, Vmask, Vmask_alpha
+    return Vf, Vmask, Vmask_SSE
 
-def get_alpha_centroids(Vmask_alpha):
-    """ From the alpha mask obtain the centroids of each othe alpha helices
+def get_SSE_centroids(Vmask_SSE):
+    """ From the SSE mask obtain the centroids of each of the SSE elements identified.
     """
-    # Erode mask so as to retain center of alpha helix and seperate helices that might have merged in sampling
-    Vmask_alpha_outline = binary_erosion(Vmask_alpha, structure=np.ones((3,3,3))).astype(Vmask_alpha.dtype)
+    # Erode mask so as to retain center of SSE and seperate SSE that might have merged in sampling
+    Vmask_SSE_outline = binary_erosion(Vmask_SSE, structure=np.ones((3,3,3))).astype(Vmask_SSE.dtype)
     # Label different regions
-    Vmask_alpha_objects = measure.label(Vmask_alpha_outline)
+    Vmask_SSE_objects = measure.label(Vmask_SSE_outline)
     # Create object that defines region properties
-    Vmask_alpha_regions = measure.regionprops(Vmask_alpha_objects, cache=False)
+    Vmask_SSE_regions = measure.regionprops(Vmask_SSE_objects, cache=False)
     # Array to store centroid values rounded
-    alpha_centroids = []
+    SSE_centroids = []
     # Obtain centroids for each region
-    for region in Vmask_alpha_regions:
-        # Remove small objects that are probably small disconnections from main alpha
+    for region in Vmask_SSE_regions:
+        # Remove small objects that are probably small disconnections from main SSE
         if region['area'] > 50:
             centroid = [np.rint(i).astype('int') for i in region['centroid']]
             # Check that centroid is also inside outline
-            if Vmask_alpha_outline[centroid[0], centroid[1], centroid[2]]:
-                alpha_centroids.append(centroid)
+            if Vmask_SSE_outline[centroid[0], centroid[1], centroid[2]]:
+                SSE_centroids.append(centroid)
 
-    return alpha_centroids
+    return SSE_centroids
 
 def extract_boxes(Vf, centroids, box_dim):
     """ Given a set of cordinates and dimensions extract boxes at that point
@@ -94,23 +99,23 @@ def extract_boxes(Vf, centroids, box_dim):
                         centroid[2]-box_hw:centroid[2]+box_hw+1])
     return boxes
 
-def get_mask_no_alpha(Vmask, Vmask_alpha, SE):
-    """ Obtain a mask that contains those parts that do not have alpha helices
+def get_mask_no_SSE(Vmask, Vmask_SSE, SE):
+    """ Obtain a mask that contains those parts that do not have the SSE of interest
     """
-    # First obtain Not Alpha
-    Vmask_not_alpha = np.logical_not(Vmask_alpha).astype(Vmask.dtype)
-    # Erode not alpha with SE
-    Vmask_not_alpha_eroded = binary_erosion(Vmask_not_alpha, structure=SE).astype(Vmask.dtype)
-    # Find union with Vmask so that areas away from alpha remain unchanged
-    Vmask_no_alpha = np.logical_and(Vmask, Vmask_not_alpha_eroded).astype(Vmask.dtype)
+    # First obtain Not SSE
+    Vmask_not_SSE = np.logical_not(Vmask_SSE).astype(Vmask.dtype)
+    # Erode not SSE with SE to avoid choosing boxes close to SSE
+    Vmask_not_SSE_eroded = binary_erosion(Vmask_not_SSE, structure=SE).astype(Vmask.dtype)
+    # Find union with Vmask so that areas away from SSE remain unchanged
+    Vmask_no_SSE = np.logical_and(Vmask, Vmask_not_SSE_eroded).astype(Vmask.dtype)
 
-    return Vmask_no_alpha
+    return Vmask_no_SSE
 
-def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
+def get_no_SSE_centroids(Vmask_no_SSE, n_centroids):
     """ Randomly select n centroids from mask
     """
     # Obtain coordinates where mask is 1
-    possible_centroids = np.argwhere(Vmask_no_alpha == 1.0)
+    possible_centroids = np.argwhere(Vmask_no_SSE == 1.0)
     # Randomly choose n of this
     if len(possible_centroids)>0:
         centroid_ids = np.random.choice(len(possible_centroids), n_centroids)
@@ -118,29 +123,29 @@ def get_no_alpha_centroids(Vmask_no_alpha, n_centroids):
     else:
         return None
 
-def extract_boxes_PDB(PDB, maxRes, threshold, alpha_threshold, minresidues, box_dim):
-    """ For a PDB extract alpha helices and boxes not containg alpha helices
+def extract_boxes_PDB(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim):
+    """ For a PDB extract SSE helices and boxes not containg SSE helices
     """
     # Get volumes 
-    Vf, Vmask, Vmask_alpha = simulate_volume(PDB, maxRes, threshold, alpha_threshold, minresidues)
+    Vf, Vmask, Vmask_SSE = simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues)
     # Exit if simulation unsuccesfull
-    if Vf is None or Vmask is None or Vmask_alpha is None:
+    if Vf is None or Vmask is None or Vmask_SSE is None:
         return None, None
-    # Get alpha centroids
-    alpha_centroids = get_alpha_centroids(Vmask_alpha)
-    # Extract alpha boxes
-    alpha_boxes = extract_boxes(Vf, alpha_centroids, box_dim)
-    # Get volume mask with no alphas
-    Vmask_no_alpha = get_mask_no_alpha(Vmask, Vmask_alpha, SE)
-    # Sample centroids from mask containing no alphas
-    no_alpha_centroids = get_no_alpha_centroids(Vmask_no_alpha, len(alpha_centroids))
-    # Extract no alpha boxes
-    if no_alpha_centroids is not None:
-        no_alpha_boxes = extract_boxes(Vf, no_alpha_centroids, box_dim)
+    # Get SSE centroids
+    SSE_centroids = get_SSE_centroids(Vmask_SSE)
+    # Extract SSE boxes
+    SSE_boxes = extract_boxes(Vf, SSE_centroids, box_dim)
+    # Get volume mask with no SSEs
+    Vmask_no_SSE = get_mask_no_SSE(Vmask, Vmask_SSE, SE)
+    # Sample centroids from mask containing no SSEs
+    no_SSE_centroids = get_no_SSE_centroids(Vmask_no_SSE, len(SSE_centroids))
+    # Extract no SSE boxes
+    if no_SSE_centroids is not None:
+        no_SSE_boxes = extract_boxes(Vf, no_SSE_centroids, box_dim)
     else:
-        no_alpha_boxes = None
+        no_SSE_boxes = None
 
-    return alpha_boxes, no_alpha_boxes
+    return SSE_boxes, no_SSE_boxes
 
 def create_directory(path):
     """ Create directory if it does not exist
@@ -148,7 +153,7 @@ def create_directory(path):
     if not os.path.isdir(path):
         os.mkdir(path)
 
-def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_threshold, minresidues, box_dim):
+def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim):
     """ Creat the whole dataset from a directory containg all the PDBS
     """
     # Create dataset direcotry if it doesn't exist
@@ -161,33 +166,34 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
         if os.path.isdir(dataset_root+PDB[:-4]):
             continue
         #Obtain boxes
-        alpha_boxes, no_alpha_boxes = extract_boxes_PDB(data_root+PDB, maxRes, threshold, alpha_threshold, minresidues, box_dim)
-        if alpha_boxes is not None and no_alpha_boxes is not None:
+        SSE_boxes, no_SSE_boxes = extract_boxes_PDB(data_root+PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim)
+        if SSE_boxes is not None and no_SSE_boxes is not None:
             # Create directory with pdb name
             create_directory(dataset_root+PDB[:-4])
-            # Create subdirecotries to store alpha and no alpha
-            create_directory(dataset_root+PDB[:-4]+'/alpha')
-            create_directory(dataset_root+PDB[:-4]+'/no_alpha')
+            # Create subdirecotries to store SSE and no SSE
+            create_directory(dataset_root+PDB[:-4]+'/'+SSE_type)
+            create_directory(dataset_root+PDB[:-4]+'/no_'+SSE_type)
             # Save the different boxes
-            for i, box in enumerate(alpha_boxes):
+            for i, box in enumerate(SSE_boxes):
                 # Check correct box dimensions it might be boxes were in a corner
                 # and have uneven box dimensions
                 if box.shape == (box_dim, box_dim, box_dim):
-                    np.save(dataset_root+PDB[:-4]+'/alpha/'+'box%d.npy'%i, box)
-            for i, box in enumerate(no_alpha_boxes):
+                    np.save(dataset_root+PDB[:-4]+'/%s/'%SSE_type+'box%d.npy'%i, box)
+            for i, box in enumerate(no_SSE_boxes):
                 if box.shape == (box_dim, box_dim, box_dim):
-                    np.save(dataset_root+PDB[:-4]+'/no_alpha/'+'box%d.npy'%i, box)
+                    np.save(dataset_root+PDB[:-4]+'/no_%s/'%SSE_type+'box%d.npy'%i, box)
 
 if __name__ == "__main__":
     # Define variables
     data_root = 'nrPDB/PDB/'
     dataset_root = 'nrPDB/Dataset/3A/'
+    SSE_type = 'alpha'
     maxRes = 3.0
-    threshold = 0.5
-    alpha_threshold = 0.5
+    mask_threshold = 0.5
+    SSE_mask_threshold = 0.5
     minresidues = 7
     box_dim = 11
     SE = np.ones((3,3,3))
 
     # Create dataset
-    create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_threshold, minresidues, box_dim)
+    create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim)
