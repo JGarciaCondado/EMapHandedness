@@ -23,7 +23,7 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, m
     """
     # Create temporary name
     fnRandom = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(32)])
-    fnHash = "nrPDB/tmp"+fnRandom
+    fnHash = "tmp"+fnRandom
     # Center pdb
     ok = runJob("xmipp_pdb_center -i %s -o %s_centered.pdb"%(PDB,fnHash))
     # Obtain desired SSE pdb sections
