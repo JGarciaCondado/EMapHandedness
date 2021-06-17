@@ -181,8 +181,8 @@ def create_alpha_dataset(data_root, dataset_root, maxRes, threshold, alpha_thres
 if __name__ == "__main__":
     # Define variables
     data_root = 'nrPDB/PDB/'
-    dataset_root = 'nrPDB/Dataset/'
-    maxRes = 5.0
+    dataset_root = 'nrPDB/Dataset/3A/'
+    maxRes = 3.0
     threshold = 0.5
     alpha_threshold = 0.5
     minresidues = 7
