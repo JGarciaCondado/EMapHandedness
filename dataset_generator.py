@@ -65,11 +65,11 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, m
 
     return Vf, Vmask, Vmask_SSE
 
-def get_SSE_centroids(Vmask_SSE):
+def get_SSE_centroids(Vmask_SSE, SE):
     """ From the SSE mask obtain the centroids of each of the SSE elements identified.
     """
     # Erode mask so as to retain center of SSE and seperate SSE that might have merged in sampling
-    Vmask_SSE_outline = binary_erosion(Vmask_SSE, structure=np.ones((3,3,3))).astype(Vmask_SSE.dtype)
+    Vmask_SSE_outline = binary_erosion(Vmask_SSE, structure=SE).astype(Vmask_SSE.dtype)
     # Label different regions
     Vmask_SSE_objects = measure.label(Vmask_SSE_outline)
     # Create object that defines region properties
@@ -123,7 +123,7 @@ def get_no_SSE_centroids(Vmask_no_SSE, n_centroids):
     else:
         return None
 
-def extract_boxes_PDB(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim):
+def extract_boxes_PDB(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask):
     """ For a PDB extract SSE helices and boxes not containg SSE helices
     """
     # Get volumes 
@@ -132,11 +132,11 @@ def extract_boxes_PDB(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type,
     if Vf is None or Vmask is None or Vmask_SSE is None:
         return None, None
     # Get SSE centroids
-    SSE_centroids = get_SSE_centroids(Vmask_SSE)
+    SSE_centroids = get_SSE_centroids(Vmask_SSE, SE_centroids)
     # Extract SSE boxes
     SSE_boxes = extract_boxes(Vf, SSE_centroids, box_dim)
     # Get volume mask with no SSEs
-    Vmask_no_SSE = get_mask_no_SSE(Vmask, Vmask_SSE, SE)
+    Vmask_no_SSE = get_mask_no_SSE(Vmask, Vmask_SSE, SE_noSSEMask)
     # Sample centroids from mask containing no SSEs
     no_SSE_centroids = get_no_SSE_centroids(Vmask_no_SSE, len(SSE_centroids))
     # Extract no SSE boxes
@@ -153,8 +153,8 @@ def create_directory(path):
     if not os.path.isdir(path):
         os.mkdir(path)
 
-def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim):
-    """ Creat the whole dataset from a directory containg all the PDBS
+def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask):
+    """ Creat the whole dataset from a directory containg all the PDB
     """
     # Create dataset direcotry if it doesn't exist
     create_directory(dataset_root)
@@ -166,7 +166,7 @@ def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask
         if os.path.isdir(dataset_root+PDB[:-4]):
             continue
         #Obtain boxes
-        SSE_boxes, no_SSE_boxes = extract_boxes_PDB(data_root+PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim)
+        SSE_boxes, no_SSE_boxes = extract_boxes_PDB(data_root+PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask)
         if SSE_boxes is not None and no_SSE_boxes is not None:
             # Create directory with pdb name
             create_directory(dataset_root+PDB[:-4])
@@ -186,14 +186,15 @@ def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask
 if __name__ == "__main__":
     # Define variables
     data_root = 'nrPDB/PDB/'
-    dataset_root = 'nrPDB/Dataset/3A/'
-    SSE_type = 'alpha'
-    maxRes = 3.0
+    dataset_root = 'nrPDB/Dataset/Beta/'
+    SSE_type = 'beta'
+    maxRes = 1.0
     mask_threshold = 0.5
     SSE_mask_threshold = 0.5
-    minresidues = 7
+    minresidues = 4
     box_dim = 11
-    SE = np.ones((3,3,3))
+    SE_centroids = np.ones((2,2,2))
+    SE_noSSEMask = np.ones((3,3,3))
 
     # Create dataset
-    create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim)
+    create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask)
