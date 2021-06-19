@@ -28,9 +28,9 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, m
     ok = runJob("xmipp_pdb_center -i %s -o %s_centered.pdb"%(PDB,fnHash))
     # Obtain desired SSE pdb sections
     if ok:
-        if SSE_type is 'alpha':
+        if SSE_type == 'alpha':
             ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb --keep_alpha %d"%(fnHash,fnHash,minresidues))
-        elif SSE_type is 'beta':
+        elif SSE_type == 'beta':
             ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb --keep_beta %d"%(fnHash,fnHash,minresidues))
         else:
             ok = False
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     box_dim = 11
     SE_centroids = np.ones((2,2,2))
     SE_noSSEMask = np.ones((3,3,3))
-    restart = True
+    restart = False
 
     # Create dataset
     create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues, box_dim, SE_centroids, SE_noSSEMask, restart)
