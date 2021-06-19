@@ -12,3 +12,6 @@ logs/
 
 # Ignore pdbs
 nrPDB/
+
+# Ignore any temporary files
+tmp*
