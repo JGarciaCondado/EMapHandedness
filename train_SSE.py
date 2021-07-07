@@ -2,12 +2,12 @@ import torch
 import os
 
 from torch.utils.data import DataLoader
-from alpha_dataset import AlphaDataset
+from SSE_torchdataset import SSEDataset
 from models import AlphaNet_extended
 
 if __name__ == '__main__':
     # Variables
-    torchDataset_root = 'nrPDB/torchDataset'
+    torchDataset_root = 'nrPDB/torchDataset/betaDataset'
     batch_size = 64
 
     # Load Dataset

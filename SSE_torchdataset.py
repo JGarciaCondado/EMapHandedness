@@ -5,12 +5,14 @@ from torch.utils.data import Dataset, DataLoader
 import torch
 
 
-class AlphaDataset(Dataset):
-    """ Torch Dataset object that load the boxes previously created
+class SSEDataset(Dataset):
+    """ Torch Dataset object that loads the boxes previously created
+        with label to wether they belong to a specific SSE type
     """
-    def __init__(self, dataset_root, c):
+    def __init__(self, dataset_root, SSE_type, c):
         self.dataset_root = dataset_root
         self.dataset_table = None
+        self.SSE_type = SSE_type
         self.c = c
         self._init_dataset()
 
@@ -35,7 +37,7 @@ class AlphaDataset(Dataset):
             pdb_folder = os.path.join(dataset_root, PDB)
             for box_type in os.listdir(pdb_folder):
                 boxes_folder = os.path.join(pdb_folder, box_type)
-                if box_type == 'alpha':
+                if box_type == self.SSE_type:
                     label = 1
                 else:
                     label = 0
@@ -51,19 +53,22 @@ class AlphaDataset(Dataset):
         # Change values greater than c to c
         box[box>self.c] = self.c
         # Normalize to [0,1]
-        box = (box-np.min(box))/(np.max(box)-np.min(box))
+        # TODO normalization should be carried out in simulation at whole volume level
+        if np.min(box) != np.max(box):
+            box = (box-np.min(box))/(np.max(box)-np.min(box))
 
         return box
 
 
 if __name__ == '__main__':
     # Variables
-    dataset_root = 'nrPDB/Dataset'
-    torchDataset_root = 'nrPDB/torchDataset/alphaDataset'
+    dataset_root = 'nrPDB/Dataset/Beta'
+    torchDataset_root = 'nrPDB/torchDataset/betaDataset'
+    SSE_type = 'beta'
     trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
     c = 5
     # Generate Dataset
-    dataset = AlphaDataset(dataset_root, c)
+    dataset = SSEDataset(dataset_root, SSE_type, c)
     # Split into different Datasets
     trainsize = int(len(dataset)*trainsplit)
     valsize = int(len(dataset)*valsplit)
