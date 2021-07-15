@@ -7,8 +7,8 @@ from models import AlphaNet_extended
 
 if __name__ == '__main__':
     # Variables
-    torchDataset_root = 'nrPDB/torchDataset/betaDataset'
-    batch_size = 64
+    torchDataset_root = 'nrPDB/torchDataset/3A/alphaDataset'
+    batch_size = 2048
 
     # Load Dataset
     traindataset = torch.load(os.path.join(torchDataset_root, 'trainDataset'))
@@ -23,16 +23,8 @@ if __name__ == '__main__':
     testloader = DataLoader(testdataset, batch_size=batch_size,
                              shuffle=True, num_workers=2)
     # Initialize model and train model
-    model = AlphaNet_extended(epochs=50, verbose=1, num_batches=1)
+    model = AlphaNet_extended(epochs=50, verbose=1, num_batches=3, save_folder='Models/3A/alpha')
     model.trainloop(trainloader, valloader)
-
-    # Evaluate performance
-    print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
-    print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=len(valloader)))
-    print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=len(testloader)))
-
-    # Load different model
-    model = AlphaNet_extended(restore=True, file_name='25model_checkpoint.pth')
 
     # Evaluate performance
     print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
