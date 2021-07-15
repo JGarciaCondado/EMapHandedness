@@ -6,7 +6,7 @@ import os
 from torch import nn
 from torch import optim
 
-class AlphaNet(nn.Module):
+class EM3DNet(nn.Module):
     """ 3D CNN to estiamte the probability that there is an alpha helix in the center of the box.
     """
     def __init__(self):
@@ -53,7 +53,7 @@ class AlphaNet(nn.Module):
         x = self.sigmoid(x)
         return x
 
-class AlphaNet_extended(AlphaNet):
+class EM3DNet_extended(EM3DNet):
 
     def __init__(self, epochs=100, lr=0.001,verbose=1,num_batches=10, save_folder='Models',
                  restore=False, save_e=1, file_name='model_checkpoint.pth'):

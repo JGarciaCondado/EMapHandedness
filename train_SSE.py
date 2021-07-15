@@ -3,12 +3,15 @@ import os
 
 from torch.utils.data import DataLoader
 from SSE_torchdataset import SSEDataset
-from models import AlphaNet_extended
+from models import EM3DNet_extended
 
 if __name__ == '__main__':
     # Variables
-    torchDataset_root = 'nrPDB/torchDataset/3A/alphaDataset'
-    batch_size = 2048
+    torchDataset_root = 'nrPDB/torchDataset/alphaDataset'
+    save_folder = 'Models/'
+    batch_size = 1048
+    epochs = 50
+    num_batches_eval= 1 # number of batches to evaluate whilst training
 
     # Load Dataset
     traindataset = torch.load(os.path.join(torchDataset_root, 'trainDataset'))
@@ -23,7 +26,7 @@ if __name__ == '__main__':
     testloader = DataLoader(testdataset, batch_size=batch_size,
                              shuffle=True, num_workers=2)
     # Initialize model and train model
-    model = AlphaNet_extended(epochs=50, verbose=1, num_batches=3, save_folder='Models/3A/alpha')
+    model = EM3DNet_extended(epochs=epochs, verbose=1, num_batches=num_batches_eval, save_folder=save_folder)
     model.trainloop(trainloader, valloader)
 
     # Evaluate performance
