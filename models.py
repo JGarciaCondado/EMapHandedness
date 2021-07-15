@@ -88,7 +88,12 @@ class EM3DNet_extended(EM3DNet):
 
         self.valid_loss_during_training = []
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available():
+            print("GPU sucessfully found")
+            self.device = torch.device("cuda")
+        else:
+            print("GPU NOT found, using cpu")
+            self.device = torch.device("cpu")
 
         self.to(self.device)
 
