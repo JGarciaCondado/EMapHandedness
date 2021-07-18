@@ -54,6 +54,7 @@ class SSEDataset(Dataset):
         box[box>self.c] = self.c
         # Normalize to [0,1]
         # TODO normalization should be carried out in simulation at whole volume level
+        # as well as cut off at volume level
         if np.min(box) != np.max(box):
             box = (box-np.min(box))/(np.max(box)-np.min(box))
 

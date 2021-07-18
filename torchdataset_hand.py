@@ -59,7 +59,7 @@ class HandDataset(Dataset):
 
 if __name__ == '__main__':
     # Variables
-    dataset_root = 'nrPDB/Dataset'
+    dataset_root = 'nrPDB/Dataset/1A/'
     torchDataset_root = 'nrPDB/torchDataset/handDataset'
     trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
     c = 5
