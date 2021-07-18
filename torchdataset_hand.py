@@ -8,9 +8,10 @@ import torch
 class HandDataset(Dataset):
     """ Torch Dataset object that load the boxes previously created and flips them
     """
-    def __init__(self, dataset_root, c):
+    def __init__(self, dataset_root, SSE_type, c):
         self.dataset_root = dataset_root
         self.dataset_table = None
+        self.SSE_type = SSE_type
         self.c = c
         self._init_dataset()
 
@@ -36,12 +37,11 @@ class HandDataset(Dataset):
         dataset_info = []
         for PDB in os.listdir(self.dataset_root):
             pdb_folder = os.path.join(dataset_root, PDB)
-            box_type = 'alpha'
-            boxes_folder = os.path.join(pdb_folder, box_type)
+            boxes_folder = os.path.join(pdb_folder, self.SSE_type)
             for box in os.listdir(boxes_folder):
                 # Randomly assing label flipped or not flipped
                 label = np.random.choice(2)
-                dataset_info.append([PDB, box_type, box[3:-4], label])
+                dataset_info.append([PDB, self.SSE_type, box[3:-4], label])
         self.dataset_table = pd.DataFrame(dataset_info, columns=['PDB', 'Box Type', 'Number', 'Label'])
 
     def transform(self, box):
@@ -50,9 +50,10 @@ class HandDataset(Dataset):
         # Change negative values to zeros
         box[box<0.0] = 0.0
         # Change values greater than c to c
-#        box[box>self.c] = self.c
+        box[box>self.c] = self.c
         # Normalize to [0,1]
-        box = (box-np.min(box))/(np.max(box)-np.min(box))
+        if np.min(box) != np.max(box):
+            box = (box-np.min(box))/(np.max(box)-np.min(box))
 
         return box
 
@@ -61,10 +62,11 @@ if __name__ == '__main__':
     # Variables
     dataset_root = 'nrPDB/Dataset/1A/'
     torchDataset_root = 'nrPDB/torchDataset/handDataset'
+    SSE_type = 'alpha'
     trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
     c = 5
     # Generate Dataset
-    dataset = HandDataset(dataset_root, c)
+    dataset = HandDataset(dataset_root, SSE_type, c)
     # Split into different Datasets
     trainsize = int(len(dataset)*trainsplit)
     valsize = int(len(dataset)*valsplit)

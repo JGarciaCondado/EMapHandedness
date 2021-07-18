@@ -2,7 +2,7 @@ import torch
 import os
 
 from torch.utils.data import DataLoader
-from SSE_torchdataset import SSEDataset
+from torchdataset_SSE import SSEDataset
 from models import EM3DNet_extended
 
 if __name__ == '__main__':

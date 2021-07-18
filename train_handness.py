@@ -2,8 +2,8 @@ import torch
 import os
 
 from torch.utils.data import DataLoader
-from hand_dataset import HandDataset
-from models import AlphaNet_extended
+from torchdataset_hand import HandDataset
+from models import EM3DNet_extended
 
 if __name__ == '__main__':
     # Variables
@@ -22,17 +22,10 @@ if __name__ == '__main__':
                              shuffle=True, num_workers=2)
     testloader = DataLoader(testdataset, batch_size=batch_size,
                              shuffle=True, num_workers=2)
+
     # Initialize model and train model
-    model = AlphaNet_extended(epochs=50, verbose=1, num_batches=1)
+    model = EM3DNet_extended(epochs=50, verbose=1, num_batches=1)
     model.trainloop(trainloader, valloader)
-
-    # Evaluate performance
-    print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
-    print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=len(valloader)))
-    print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=len(testloader)))
-
-    # Load different model
-    model = AlphaNet_extended(restore=True, file_name='25model_checkpoint.pth')
 
     # Evaluate performance
     print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
