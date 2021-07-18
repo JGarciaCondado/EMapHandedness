@@ -8,7 +8,13 @@ from models import EM3DNet_extended
 if __name__ == '__main__':
     # Variables
     torchDataset_root = 'nrPDB/torchDataset/handDataset'
-    batch_size = 64
+    save_folder = 'Models/'
+    restore = False
+    init_model = '1A_model.pth'
+    batch_size = 1048
+    epochs = 50
+    verbose = 1
+    num_batches_eval= 1
 
     # Load Dataset
     traindataset = torch.load(os.path.join(torchDataset_root, 'trainDataset'))
@@ -24,10 +30,10 @@ if __name__ == '__main__':
                              shuffle=True, num_workers=2)
 
     # Initialize model and train model
-    model = EM3DNet_extended(epochs=50, verbose=1, num_batches=1)
+    model = EM3DNet_extended(epochs=epochs, verbose=verbose, num_batches=num_batches_eval, save_folder=save_folder, restore=restore, init_model=init_model)
     model.trainloop(trainloader, valloader)
 
-    # Evaluate performance
+    # Evaluate performance of final model
     print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
     print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=len(valloader)))
     print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=len(testloader)))

@@ -56,7 +56,7 @@ class EM3DNet(nn.Module):
 class EM3DNet_extended(EM3DNet):
 
     def __init__(self, epochs=100, lr=0.001,verbose=1,num_batches=10, save_folder='Models',
-                 restore=False, save_e=1, file_name='model_checkpoint.pth'):
+                 restore=False, save_e=1, file_name='model_checkpoint.pth', init_model = None):
 
         super().__init__()
 
@@ -76,10 +76,15 @@ class EM3DNet_extended(EM3DNet):
 
         self.file_name = file_name
 
+        self.init_model = init_model
+
         self.save_e = save_e
 
-        if(restore==True):
-            state_dict = torch.load(os.path.join(self.save_folder,self.file_name))
+        if restore:
+            if self.init_model is not None:
+                state_dict = torch.load(os.path.join(self.save_folder, self.init_model))
+            else:
+                state_dict = torch.load(os.path.join(self.save_folder, self.file_name))
             self.load_state_dict(state_dict)
 
         # A list to store the loss evolution along training
