@@ -2,12 +2,13 @@ import torch
 import time
 import numpy as np
 import os
+import queue
 
 from torch import nn
 from torch import optim
 
 class EM3DNet(nn.Module):
-    """ 3D CNN to estiamte the probability that there is an alpha helix in the center of the box.
+    """ 3D CNN to estiamte labels from a set of boxes.
     """
     def __init__(self):
         super().__init__()
@@ -44,7 +45,7 @@ class EM3DNet(nn.Module):
         x = self.relu(x)
         x = self.conv5(x)
         x = self.relu(x)
-        # Flatten the tensor into a vecto
+        # Flatten the tensor into a vector
         x = x.view(-1,512)
         # Pass the tensor through the FC layes
         x = self.linear1(x)
@@ -189,3 +190,68 @@ class EM3DNet_extended(EM3DNet):
                 accuracy += n_correct/len(labels)
 
         return accuracy/int(num_batches)
+
+
+class AlphaVolNet(nn.Module):
+    """ 3D CNN that outputs the probability of a region containing an alpha helix.
+    """
+    def __init__(self, trained_model):
+        super().__init__()
+
+        # Convlutional layers
+        self.conv1 = nn.Conv3d(in_channels=1, out_channels=4,
+                               kernel_size = 5, padding = 1)
+        self.conv2 = nn.Conv3d(in_channels=4, out_channels=8,
+                               kernel_size = 5, padding = 1)
+        self.conv3 = nn.Conv3d(in_channels=8, out_channels=16,
+                               kernel_size = 3, padding = 0)
+        self.conv4 = nn.Conv3d(in_channels=16, out_channels=32,
+                               kernel_size = 3, padding = 0)
+        self.conv5 = nn.Conv3d(in_channels=32, out_channels=64,
+                               kernel_size = 2, padding = 0)
+        self.conv6 = nn.Conv3d(in_channels=64, out_channels=128,
+                                kernel_size = 2, padding = 0)
+        self.conv7 = nn.Conv3d(in_channels=128, out_channels=1,
+                                kernel_size = 1, padding = 0)
+
+        # Activation functions
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+        # Load model
+        self.load_model(trained_model)
+
+    def load_model(self, trained_model):
+        state_dict = torch.load(trained_model)
+        layer_names = ["conv7.bias", "conv7.weight", "conv6.bias", "conv6.weight"]
+        reshape_param = [None, (1, 128, 1, 1, 1), None, (128, 64, 2, 2, 2)]
+        q = queue.LifoQueue()
+        for name, shape in zip(layer_names, reshape_param):
+            item = state_dict.popitem()
+            if shape is not None:
+                q.put({name: item[1].reshape(shape)})
+            else:
+                q.put({name: item[1]})
+        while not q.empty():
+            state_dict.update(q.get())
+        self.load_state_dict(state_dict)
+
+
+    def forward(self, x):
+        # Pass the input tensor through the CNN operations
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.relu(x)
+        x = self.conv3(x)
+        x = self.relu(x)
+        x = self.conv4(x)
+        x = self.relu(x)
+        x = self.conv5(x)
+        x = self.relu(x)
+        # Pass the tensor through the FC layers converted into conv
+        x = self.conv6(x)
+        x = self.relu(x)
+        x = self.conv7(x)
+        x = self.sigmoid(x)
+        return x
