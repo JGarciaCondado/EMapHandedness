@@ -221,7 +221,10 @@ class AlphaVolNet(nn.Module):
         # Load model
         self.load_model(trained_model)
 
+
     def load_model(self, trained_model):
+        """ Load model from EM3DNET but readjusting FC parameters to convulotional layers
+        """
         state_dict = torch.load(trained_model)
         layer_names = ["conv7.bias", "conv7.weight", "conv6.bias", "conv6.weight"]
         reshape_param = [None, (1, 128, 1, 1, 1), None, (128, 64, 2, 2, 2)]
@@ -237,6 +240,8 @@ class AlphaVolNet(nn.Module):
         self.load_state_dict(state_dict)
 
 
+    # No training required so disable gradients
+    @torch.no_grad()
     def forward(self, x):
         # Pass the input tensor through the CNN operations
         x = self.conv1(x)
