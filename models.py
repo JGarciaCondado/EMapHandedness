@@ -254,13 +254,15 @@ class AlphaVolNet(EM3DNet):
 
             # Last batch is smaller
             if i == n_batches-1:
-                batch_size = coors.shape[0]%batch_size
+                batch = coors.shape[0]%batch_size
+            else:
+                batch = batch_size
 
             # Array to store batches
-            boxes = np.zeros([batch_size, self.box_dim, self.box_dim, self.box_dim])
+            boxes = np.zeros([batch, self.box_dim, self.box_dim, self.box_dim])
 
             # Obtain for each batch the normalized box at each loaction 
-            for j in range(batch_size):
+            for j in range(batch):
                 x, y, z = coors[i*batch_size+j]
                 box = Vf[x-box_hw:x+box_hw+1, y-box_hw:y+box_hw+1, z-box_hw:z+box_hw+1]
                 boxes[j, :, :, :] = self.normalize(box)
@@ -275,3 +277,89 @@ class AlphaVolNet(EM3DNet):
                 alpha_probs[x,y,z] = float(pred)
 
         return alpha_probs
+
+class HandNet(EM3DNet):
+    """ Model that predicts a volumes handedness.
+    """
+    def __init__(self, trained_model, box_dim, c):
+
+        super().__init__()
+
+        # Dataset variables trained on
+        self.box_dim = box_dim
+        self.c = c
+
+        # Load devices availbale
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
+
+        self.to(self.device)
+
+        # Load model
+        self.model_file = trained_model
+        state_dict = torch.load(self.model_file, map_location=self.device)
+        self.load_state_dict(state_dict)
+
+
+    @torch.no_grad()
+    def predict(self, x):
+
+        # Load data to available device
+        x = x.to(self.device)
+
+        # Pass through network
+        pred = self.forward(x)
+
+        return pred
+
+    def normalize(self, box):
+
+        box[box>self.c] = self.c
+        box[box<0] = 0
+        box = (box-np.min(box))/(np.max(box)-np.min(box))
+
+        return box
+
+    def predict_volume_consensus(self, Vf, Alpha_mask, batch_size):
+
+        # Hand predictions
+        hand_predictions = np.zeros(np.sum(Alpha_mask))
+
+        # Get coordinates of alphas
+        coors = np.argwhere((Alpha_mask))
+
+        # Variables for boxes
+        box_hw = int((self.box_dim-1)/2)
+        n_batches = int(np.ceil(coors.shape[0]/batch_size))
+
+        # Pack set of boxes into batches to pass through network
+        for i in range(n_batches):
+
+            # Last batch is smaller
+            if i == n_batches-1:
+                batch = coors.shape[0]%batch_size
+            else:
+                batch = batch_size
+
+            # Array to store batches
+            boxes = np.zeros([batch, self.box_dim, self.box_dim, self.box_dim])
+
+            # Obtain for each batch the normalized box at each loaction 
+            for j in range(batch):
+                x, y, z = coors[i*batch_size+j]
+                box = Vf[x-box_hw:x+box_hw+1, y-box_hw:y+box_hw+1, z-box_hw:z+box_hw+1]
+                boxes[j, :, :, :] = self.normalize(box)
+
+            # Run through network
+            boxes = torch.from_numpy(boxes.astype(np.float32))[:,None, :, :, :]
+            predictions = self.predict(boxes)
+
+            # Store predictions
+            hand_predictions[i*batch_size:i*batch_size+batch] = predictions.flatten().numpy()
+
+        # Consensus voting is by taking average 
+        consensus_predictions = np.mean(hand_predictions)
+
+        return consensus_predictions
