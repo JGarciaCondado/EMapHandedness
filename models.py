@@ -81,19 +81,6 @@ class EM3DNet_extended(EM3DNet):
 
         self.save_e = save_e
 
-        if restore:
-            if self.init_model is not None:
-                state_dict = torch.load(os.path.join(self.save_folder, self.init_model))
-            else:
-                state_dict = torch.load(os.path.join(self.save_folder, self.file_name))
-            self.load_state_dict(state_dict)
-
-        # A list to store the loss evolution along training
-
-        self.loss_during_training = []
-
-        self.valid_loss_during_training = []
-
         if torch.cuda.is_available():
             print("GPU sucessfully found")
             self.device = torch.device("cuda")
@@ -102,6 +89,19 @@ class EM3DNet_extended(EM3DNet):
             self.device = torch.device("cpu")
 
         self.to(self.device)
+
+        if restore:
+            if self.init_model is not None:
+                state_dict = torch.load(os.path.join(self.save_folder, self.init_model), map_location=self.device)
+            else:
+                state_dict = torch.load(os.path.join(self.save_folder, self.file_name), map_location=self.device)
+            self.load_state_dict(state_dict)
+
+        # A list to store the loss evolution along training
+
+        self.loss_during_training = []
+
+        self.valid_loss_during_training = []
 
     def trainloop(self,trainloader,validloader):
 
@@ -218,6 +218,12 @@ class AlphaVolNet(nn.Module):
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
+
+        self.to(self.device)
         # Load model
         self.load_model(trained_model)
 
@@ -225,7 +231,7 @@ class AlphaVolNet(nn.Module):
     def load_model(self, trained_model):
         """ Load model from EM3DNET but readjusting FC parameters to convulotional layers
         """
-        state_dict = torch.load(trained_model)
+        state_dict = torch.load(trained_model, map_location=self.device)
         layer_names = ["conv7.bias", "conv7.weight", "conv6.bias", "conv6.weight"]
         reshape_param = [None, (1, 128, 1, 1, 1), None, (128, 64, 2, 2, 2)]
         q = queue.LifoQueue()
