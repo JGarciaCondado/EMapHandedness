@@ -192,77 +192,86 @@ class EM3DNet_extended(EM3DNet):
         return accuracy/int(num_batches)
 
 
-class AlphaVolNet(nn.Module):
-    """ 3D CNN that outputs the probability of a region containing an alpha helix.
+class AlphaVolNet(EM3DNet):
+    """ Model that outputs the probability of a region containing an alpha helix.
     """
-    def __init__(self, trained_model):
+    def __init__(self, trained_model, box_dim, c):
+
         super().__init__()
 
-        # Convlutional layers
-        self.conv1 = nn.Conv3d(in_channels=1, out_channels=4,
-                               kernel_size = 5, padding = 1)
-        self.conv2 = nn.Conv3d(in_channels=4, out_channels=8,
-                               kernel_size = 5, padding = 1)
-        self.conv3 = nn.Conv3d(in_channels=8, out_channels=16,
-                               kernel_size = 3, padding = 0)
-        self.conv4 = nn.Conv3d(in_channels=16, out_channels=32,
-                               kernel_size = 3, padding = 0)
-        self.conv5 = nn.Conv3d(in_channels=32, out_channels=64,
-                               kernel_size = 2, padding = 0)
-        self.conv6 = nn.Conv3d(in_channels=64, out_channels=128,
-                                kernel_size = 2, padding = 0)
-        self.conv7 = nn.Conv3d(in_channels=128, out_channels=1,
-                                kernel_size = 1, padding = 0)
+        # Dataset variables trained on
+        self.box_dim = box_dim
+        self.c = c
 
-        # Activation functions
-        self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
-
+        # Load devices availbale
         if torch.cuda.is_available():
             self.device = torch.device("cuda")
         else:
             self.device = torch.device("cpu")
 
         self.to(self.device)
+
         # Load model
-        self.load_model(trained_model)
-
-
-    def load_model(self, trained_model):
-        """ Load model from EM3DNET but readjusting FC parameters to convulotional layers
-        """
-        state_dict = torch.load(trained_model, map_location=self.device)
-        layer_names = ["conv7.bias", "conv7.weight", "conv6.bias", "conv6.weight"]
-        reshape_param = [None, (1, 128, 1, 1, 1), None, (128, 64, 2, 2, 2)]
-        q = queue.LifoQueue()
-        for name, shape in zip(layer_names, reshape_param):
-            item = state_dict.popitem()
-            if shape is not None:
-                q.put({name: item[1].reshape(shape)})
-            else:
-                q.put({name: item[1]})
-        while not q.empty():
-            state_dict.update(q.get())
+        self.model_file = trained_model
+        state_dict = torch.load(self.model_file, map_location=self.device)
         self.load_state_dict(state_dict)
 
 
-    # No training required so disable gradients
     @torch.no_grad()
-    def forward(self, x):
-        # Pass the input tensor through the CNN operations
-        x = self.conv1(x)
-        x = self.relu(x)
-        x = self.conv2(x)
-        x = self.relu(x)
-        x = self.conv3(x)
-        x = self.relu(x)
-        x = self.conv4(x)
-        x = self.relu(x)
-        x = self.conv5(x)
-        x = self.relu(x)
-        # Pass the tensor through the FC layers converted into conv
-        x = self.conv6(x)
-        x = self.relu(x)
-        x = self.conv7(x)
-        x = self.sigmoid(x)
-        return x
+    def predict(self, x):
+
+        # Load data to available device
+        x = x.to(self.device)
+
+        # Pass through network
+        pred = self.forward(x)
+
+        return pred
+
+    def normalize(self, box):
+
+        box[box>self.c] = self.c
+        box[box<0] = 0
+        box = (box-np.min(box))/(np.max(box)-np.min(box))
+
+        return box
+
+    def predict_volume(self, Vf, Vmask, batch_size):
+
+
+        # Array to store probabilities
+        alpha_probs = np.zeros(Vf.shape)
+
+        # Get coordinates of mask
+        coors = np.argwhere((Vmask))
+
+        # Variables for boxes
+        box_hw = int((self.box_dim-1)/2)
+        n_batches = int(np.ceil(coors.shape[0]/batch_size))
+
+        # Pack set of boxes into batches to pass through network
+        for i in range(n_batches):
+
+            # Last batch is smaller
+            if i == n_batches-1:
+                batch_size = coors.shape[0]%batch_size
+
+            # Array to store batches
+            boxes = np.zeros([batch_size, self.box_dim, self.box_dim, self.box_dim])
+
+            # Obtain for each batch the normalized box at each loaction 
+            for j in range(batch_size):
+                x, y, z = coors[i*batch_size+j]
+                box = Vf[x-box_hw:x+box_hw+1, y-box_hw:y+box_hw+1, z-box_hw:z+box_hw+1]
+                boxes[j, :, :, :] = self.normalize(box)
+
+            # Run through network
+            boxes = torch.from_numpy(boxes.astype(np.float32))[:,None, :, :, :]
+            predictions = self.predict(boxes)
+
+            # Store in appropriate part of the volume
+            for j, pred in enumerate(predictions.flatten()):
+                x, y, z = coors[i*batch_size+j]
+                alpha_probs[x,y,z] = float(pred)
+
+        return alpha_probs
