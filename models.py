@@ -279,7 +279,7 @@ class AlphaVolNet(EM3DNet):
         return alpha_probs
 
 class HandNet(EM3DNet):
-    """ Model that predicts a volumes handedness.
+    """ Model that predicts a volumes handedness from given alpha mask
     """
     def __init__(self, trained_model, box_dim, c):
 
@@ -363,3 +363,29 @@ class HandNet(EM3DNet):
         consensus_predictions = np.mean(hand_predictions)
 
         return consensus_predictions
+
+class HaPi():
+    """ Ha(ndedness) Pi(peline) is a model that predicts from a given
+        electron density map volume its handedness.
+    """
+
+    def __init__(self, alpha_model, hand_model, box_dim, c):
+
+        # Load models 
+        self.model_alpha = AlphaVolNet(alpha_model, box_dim, c)
+        self.model_hand = HandNet(hand_model, box_dim, c)
+
+    def predict(self, Vf, Vmask, thr, batch_size):
+        """ 0 means correct handedness and 1 mirrored version
+        """
+
+        # Obtain location of alphahelics
+        alpha_probs = self.model_alpha.predict_volume(Vf, Vmask, batch_size)
+
+        # Alpha mask by thresholding
+        alpha_mask = alpha_probs > thr
+
+        # Predict hand
+        handness = self.model_hand.predict_volume_consensus(Vf, alpha_mask, batch_size)
+
+        return handness
