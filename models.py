@@ -415,3 +415,20 @@ class HaPi():
             handness = None
 
         return handness
+
+    def evaluate(self, Vf, Vmask, thr, batch_size, label):
+
+        # Predict hand
+        prediction = self.predict(Vf, Vmask, thr, batch_size)
+
+        if prediction is None:
+            result = np.nan
+        else:
+            # Assign hand
+            hand = prediction > 0.5
+
+            # Check wether it is correct
+            result = hand == label
+
+
+        return result
