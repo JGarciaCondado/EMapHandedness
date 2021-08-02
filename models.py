@@ -266,7 +266,9 @@ class AlphaVolNet(EM3DNet):
             for j in range(batch):
                 x, y, z = coors[i*batch_size+j]
                 box = Vf[x-box_hw:x+box_hw+1, y-box_hw:y+box_hw+1, z-box_hw:z+box_hw+1]
-                boxes[j, :, :, :] = self.normalize(box)
+                # If box not the correct shape ignore
+                if box.shape == (self.box_dim, self.box_dim, self.box_dim):
+                    boxes[j, :, :, :] = self.normalize(box)
 
             # Run through network
             boxes = torch.from_numpy(boxes.astype(np.float32))[:,None, :, :, :]
