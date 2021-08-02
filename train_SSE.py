@@ -7,12 +7,12 @@ from models import EM3DNet_extended
 
 if __name__ == '__main__':
     # Variables
-    torchDataset_root = 'nrPDB/torchDataset/alphaDataset'
-    save_folder = 'Models/'
+    torchDataset_root = 'nrPDB/torchDataset/5A/alphaDataset'
+    save_folder = 'Models/5A/alpha'
     batch_size = 1048
     epochs = 50
     verbose = 1
-    num_batches_eval= 1
+    num_batches_eval= 3
 
     # Load Dataset
     traindataset = torch.load(os.path.join(torchDataset_root, 'trainDataset'))
@@ -32,6 +32,7 @@ if __name__ == '__main__':
     model.trainloop(trainloader, valloader)
 
     # Evaluate performance of final model
+    print("Evaluating model at last epoch")
     print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
     print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=len(valloader)))
     print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=len(testloader)))

@@ -1,20 +1,30 @@
 import torch
 import os
+import numpy as np
+import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader
 from torchdataset_hand import HandDataset
+from torchdataset_SSE import SSEDataset
 from models import EM3DNet_extended
 
 if __name__ == '__main__':
+
     # Variables
-    torchDataset_root = 'nrPDB/torchDataset/beta/hand'
-    save_folder = 'Models/Beta/hand'
-    restore = False
-    init_model = '1A_model_hand.pth'
-    batch_size = 1048
-    epochs = 50
-    verbose = 1
-    num_batches_eval= 1
+    torchDataset_root = 'nrPDB/torchDataset/beta/SSE'
+    model_directory = 'Models/Beta/SSE'
+    batch_size = 1024
+
+    # Load validation and test loss
+    trainloss = np.load(os.path.join(model_directory, 'trainloss.npy'))
+    valloss = np.load(os.path.join(model_directory, 'valloss.npy'))
+    plt.plot(range(len(trainloss)), trainloss, label='training')
+    plt.plot(range(len(valloss)), valloss, label='validation')
+    plt.legend()
+    plt.show()
+
+    # Ask for epoch
+    epoch = input('Epoch to evaluate at: ')
 
     # Load Dataset
     traindataset = torch.load(os.path.join(torchDataset_root, 'trainDataset'))
@@ -29,12 +39,11 @@ if __name__ == '__main__':
     testloader = DataLoader(testdataset, batch_size=batch_size,
                              shuffle=True, num_workers=2)
 
-    # Initialize model and train model
-    model = EM3DNet_extended(epochs=epochs, verbose=verbose, num_batches=num_batches_eval, save_folder=save_folder, restore=restore, init_model=init_model)
-    model.trainloop(trainloader, valloader)
+    # Load best model
+    model = EM3DNet_extended(restore=True, save_folder=model_directory, init_model=epoch+'model_checkpoint.pth')
 
-    # Evaluate performance of final model
-    print("Evaluating model at last epoch")
+    # Evaluate performance
+    print("Evaluate model at epoch: %s" % epoch)
     print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
     print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=len(valloader)))
     print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=len(testloader)))
