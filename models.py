@@ -290,7 +290,12 @@ class AlphaVolNet(EM3DNet):
         # Find number of true positivies and false positives
         TP = np.sum(np.logical_and(alpha_mask, Vmask_alpha))
         FP = np.sum(np.logical_and(alpha_mask, np.logical_not(Vmask_alpha)))
-        precision = TP/(TP+FP)
+
+        # If no TP or FP return nan to avoid division by zero 
+        if TP+FP == 0:
+            precision = np.nan
+        else:
+            precision = TP/(TP+FP)
 
         return precision
 
