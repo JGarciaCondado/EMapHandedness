@@ -279,6 +279,21 @@ class AlphaVolNet(EM3DNet):
 
         return alpha_probs
 
+    def precision(self, Vf, Vmask, Vmask_alpha, thr, batch_size):
+
+        # Obtain location of alphahelics
+        alpha_probs = self.predict_volume(Vf, Vmask, batch_size)
+
+        # Alpha mask by thresholding
+        alpha_mask = alpha_probs > thr
+
+        # Find number of true positivies and false positives
+        TP = np.sum(np.logical_and(alpha_mask, Vmask_alpha))
+        FP = np.sum(np.logical_and(alpha_mask, np.logical_not(Vmask_alpha)))
+        precision = TP/(TP+FP)
+
+        return precision
+
 class HandNet(EM3DNet):
     """ Model that predicts a volumes handedness from given alpha mask
     """
