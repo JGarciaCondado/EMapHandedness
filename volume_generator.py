@@ -15,7 +15,7 @@ def create_volume_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_m
             continue
         # If PDB dataset already there in case errors cause restart
         # Ignore if we want to redo the complete dataset
-        if os.path.isdir(dataset_root+PDB[:-4]) and not restart:
+        if os.path.isfile(dataset_root+'/%s.npy'%PDB[:-4]) and not restart:
             continue
         #Obtain volumes
         Vf, Vmask, Vmask_SSE = simulate_volume(data_root+PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues)
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     mask_threshold = 0.5
     SSE_mask_threshold = 0.5
     minresidues = 4
-    restart = False
+    restart = True
 
     # Create dataset
     create_volume_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_mask_threshold,SSE_type, minresidues, restart)
