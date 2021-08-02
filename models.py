@@ -232,7 +232,8 @@ class AlphaVolNet(EM3DNet):
 
         box[box>self.c] = self.c
         box[box<0] = 0
-        box = (box-np.min(box))/(np.max(box)-np.min(box))
+        if np.min(box) != np.max(box):
+            box = (box-np.min(box))/(np.max(box)-np.min(box))
 
         return box
 
@@ -318,7 +319,8 @@ class HandNet(EM3DNet):
 
         box[box>self.c] = self.c
         box[box<0] = 0
-        box = (box-np.min(box))/(np.max(box)-np.min(box))
+        if np.min(box) != np.max(box):
+            box = (box-np.min(box))/(np.max(box)-np.min(box))
 
         return box
 
@@ -386,6 +388,10 @@ class HaPi():
         alpha_mask = alpha_probs > thr
 
         # Predict hand
-        handness = self.model_hand.predict_volume_consensus(Vf, alpha_mask, batch_size)
+        if alpha_mask.any():
+            handness = self.model_hand.predict_volume_consensus(Vf, alpha_mask, batch_size)
+        else:
+            print('No alphas found to evaluate')
+            handness = None
 
         return handness
