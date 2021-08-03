@@ -26,10 +26,10 @@ def create_volume_dataset(data_root, dataset_root, maxRes, mask_threshold, SSE_m
 
 if __name__ == "__main__":
     # Define variables
-    data_root = 'nrPDB/PDB/'
+    data_root = 'nrPDB/PDB_test/'
     dataset_root = 'nrPDB/Dataset/Volumes'
     SSE_type = 'alpha'
-    maxRes = 1.0
+    maxRes = 5.0
     mask_threshold = 0.5
     SSE_mask_threshold = 0.5
     minresidues = 4

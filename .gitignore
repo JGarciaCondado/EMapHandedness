@@ -13,5 +13,8 @@ logs/
 # Ignore pdbs
 nrPDB/
 
+# Ignore metrics directory 
+metrics/
+
 # Ignore any temporary files
 tmp*

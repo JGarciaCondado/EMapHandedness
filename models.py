@@ -299,7 +299,7 @@ class AlphaVolNet(EM3DNet):
         else:
             precision = TP/(TP+FP)
 
-        return precision
+        return TP, FP, precision
 
 class HandNet(EM3DNet):
     """ Model that predicts a volumes handedness from given alpha mask
@@ -413,7 +413,6 @@ class HaPi():
         if alpha_mask.any():
             handness = self.model_hand.predict_volume_consensus(Vf, alpha_mask, batch_size)
         else:
-            print('No alphas found to evaluate')
             handness = None
 
         return handness
@@ -433,4 +432,4 @@ class HaPi():
             result = hand == label
 
 
-        return result
+        return prediction, result
