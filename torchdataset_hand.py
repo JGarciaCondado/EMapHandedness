@@ -23,7 +23,7 @@ class HandDataset(Dataset):
         box_id = os.path.join(self.dataset_root, pdb, box_type, 'box%s.npy'%box_n)
         box = self.transform(np.load(box_id))
         if label:
-            box = np.flip(box, axis=0).copy()
+            box = np.flip(box, axis=np.random.randint(3)).copy()
         box = torch.from_numpy(box)
         # Add extra dimension as torch expects a channel dimension
         box = box.unsqueeze(0)

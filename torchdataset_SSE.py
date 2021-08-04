@@ -9,11 +9,12 @@ class SSEDataset(Dataset):
     """ Torch Dataset object that loads the boxes previously created
         with label to wether they belong to a specific SSE type
     """
-    def __init__(self, dataset_root, SSE_type, c):
+    def __init__(self, dataset_root, SSE_type, c, flip):
         self.dataset_root = dataset_root
         self.dataset_table = None
         self.SSE_type = SSE_type
         self.c = c
+        self.flip = flip
         self._init_dataset()
 
     def __len__(self):
@@ -22,7 +23,11 @@ class SSEDataset(Dataset):
     def __getitem__(self, idx):
         pdb, box_type, box_n, label = self.dataset_table.iloc[idx, :]
         box_id = os.path.join(self.dataset_root, pdb, box_type, 'box%s.npy'%box_n)
-        box = torch.from_numpy(self.transform(np.load(box_id)))
+        box = self.transform(np.load(box_id))
+        # If argument flip true randomly flip 50% of the boxes
+        if self.flip and np.random.randint(2):
+            box = np.flip(box, axis=np.random.randint(3)).copy()
+        box = torch.from_numpy(box)
         # Add extra dimension as torch expects a channel dimension
         box = box.unsqueeze(0)
         label =  torch.tensor(float(label))
@@ -53,8 +58,6 @@ class SSEDataset(Dataset):
         # Change values greater than c to c
         box[box>self.c] = self.c
         # Normalize to [0,1]
-        # TODO normalization should be carried out in simulation at whole volume level
-        # as well as cut off at volume level
         if np.min(box) != np.max(box):
             box = (box-np.min(box))/(np.max(box)-np.min(box))
 
@@ -63,13 +66,14 @@ class SSEDataset(Dataset):
 
 if __name__ == '__main__':
     # Variables
-    dataset_root = 'nrPDB/Dataset/Beta'
-    torchDataset_root = 'nrPDB/torchDataset/betaDataset'
-    SSE_type = 'beta'
+    dataset_root = 'nrPDB/Dataset/5A'
+    torchDataset_root = 'nrPDB/torchDataset/alphaDataset'
+    SSE_type = 'alpha'
     trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
     c = 5
+    flip = True
     # Generate Dataset
-    dataset = SSEDataset(dataset_root, SSE_type, c)
+    dataset = SSEDataset(dataset_root, SSE_type, c, flip)
     # Split into different Datasets
     trainsize = int(len(dataset)*trainsplit)
     valsize = int(len(dataset)*valsplit)

@@ -1,10 +1,11 @@
 import numpy as np
 import os
 import pandas as pd
+import torch
 
 from models import HaPi
-from dataset_generator import simulate_volume
 from tqdm import tqdm
+from volume_generator import VolDataset
 
 # Load pipeline
 alpha_model = 'Models/5A_alpha_model.pth'
@@ -17,8 +18,11 @@ pipeline = HaPi(alpha_model, hand_model, box_dim, c)
 thr = 0.75
 batch_size = 2048
 
+# Load data
+torchDataset_root = 'nrPDB/torchDataset/Volumes'
+dataset = torch.load(os.path.join(torchDataset_root, 'valDataset'))
+
 # Evaluate data
-data_dir = 'nrPDB/Dataset/Volumes'
 save_file = 'metrics/boxvolumes.csv'
 PDB_names = []
 precision_vals = []
@@ -28,20 +32,17 @@ predict_hands = []
 handedness_vals = []
 handedness_acc = []
 
-for PDB in tqdm(os.listdir(data_dir)):
+for PDB, hand, vol in tqdm(dataset):
 
     # Load data
-    [Vf, Vmask, Vmask_SSE] = np.load(os.path.join(data_dir, PDB))
+    [Vf, Vmask, Vmask_SSE] = vol
 
     # Randomly flip volume
-    if np.random.randint(2):
+    if hand:
         Vf = np.flip(Vf, axis=np.random.randint(3))
-        hand = 1
-    else:
-        hand = 0
 
     # Store name of PDB 
-    PDB_names.append(PDB[:-4])
+    PDB_names.append(PDB)
 
     # Find alpha precision
     TP, FP, precision = pipeline.model_alpha.precision(Vf, Vmask, Vmask_SSE, thr, batch_size)
