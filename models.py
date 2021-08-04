@@ -381,7 +381,7 @@ class HandNet(EM3DNet):
             predictions = self.predict(boxes)
 
             # Store predictions
-            hand_predictions[i*batch_size:i*batch_size+batch] = predictions.flatten().numpy()
+            hand_predictions[i*batch_size:i*batch_size+batch] = predictions.cpu().flatten().numpy()
 
         # Consensus voting is by taking average 
         consensus_predictions = np.mean(hand_predictions)
