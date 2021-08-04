@@ -15,7 +15,7 @@ c = 5
 pipeline = HaPi(alpha_model, hand_model, box_dim, c)
 
 # Variable pipeline
-thr = 0.75
+thr = 0.5
 batch_size = 2048
 
 # Load data
@@ -39,7 +39,10 @@ for PDB, hand, vol in tqdm(dataset):
 
     # Randomly flip volume
     if hand:
-        Vf = np.flip(Vf, axis=np.random.randint(3))
+        axis = np.random.randint(3)
+        Vf = np.flip(Vf, axis=axis)
+        Vmask = np.flip(Vmask, axis=axis)
+        Vmask_SSE = np.flip(Vmask_SSE, axis=axis)
 
     # Store name of PDB 
     PDB_names.append(PDB)
