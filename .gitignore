@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 *.swp
 
-# Ignore models not in final model directory (/models)
+# Ignore models not in final model directory /models
 *.h5
 Models/
 
@@ -18,3 +18,8 @@ metrics/
 
 # Ignore any temporary files
 tmp*
+
+# Ignore distribution files
+build/
+dist/
+HaPi.egg-info
