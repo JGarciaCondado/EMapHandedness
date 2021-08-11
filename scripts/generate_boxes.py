@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, "../")
-
 import numpy as np
 
 from hapi.simulator import create_SSE_dataset

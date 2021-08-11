@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, "../")
-
 import torch
 import os
 import numpy as np
