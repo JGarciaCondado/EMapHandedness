@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 *.swp
 
-# Ignore models
+# Ignore models not in final model directory (/models)
 *.h5
 Models/
 

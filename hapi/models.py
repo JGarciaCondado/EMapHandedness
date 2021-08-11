@@ -2,7 +2,6 @@ import torch
 import time
 import numpy as np
 import os
-import queue
 
 from torch import nn
 from torch import optim

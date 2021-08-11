@@ -1,15 +1,18 @@
-import numpy as np
-import os
-import pandas as pd
-import torch
+import sys
+sys.path.insert(0, "../")
 
-from models import HaPi
+import torch
+import os
+import numpy as np
+import pandas as pd
+
 from tqdm import tqdm
-from volume_generator import VolDataset
+from hapi.models import HaPi
+from hapi.data import VolDataset
 
 # Load pipeline
-alpha_model = 'Models/5A_alpha_model.pth'
-hand_model = 'Models/5A_hand_model.pth'
+alpha_model = '../Models/5A_alpha_model.pth'
+hand_model = '../Models/5A_hand_model.pth'
 box_dim = 11
 c = 5
 pipeline = HaPi(alpha_model, hand_model, box_dim, c)
@@ -19,11 +22,11 @@ thr = 0.5
 batch_size = 2048
 
 # Load data
-torchDataset_root = 'nrPDB/torchDataset/Volumes'
+torchDataset_root = '../nrPDB/torchDataset/Volumes'
 dataset = torch.load(os.path.join(torchDataset_root, 'valDataset'))
 
 # Evaluate data
-save_file = 'metrics/boxvolumes.csv'
+save_file = '../metrics/boxvolumes.csv'
 PDB_names = []
 precision_vals = []
 TPs = []
