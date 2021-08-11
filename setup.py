@@ -13,4 +13,6 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/JGarciaCondado/EMapHandedness",
     packages=["hapi"],
+    python_requires="==3.8.5",
+    install_requires=['numpy', 'pandas', 'torch', 'mrcfile', 'scipy', 'scikit-image', 'tqdm']
 )

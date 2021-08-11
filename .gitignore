@@ -22,4 +22,4 @@ tmp*
 # Ignore distribution files
 build/
 dist/
-HaPi.egg-info
+HaPi.egg-info/
