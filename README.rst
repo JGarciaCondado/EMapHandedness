@@ -2,7 +2,7 @@
 HaPi - Handedness Pipeline
 ==========================
 
-HaPi (Handedness Pipeline) is a pipeline used to determine the hand of cryoEM determined maps. Resolving 3D sturctures of macromolecules using Single Particle Analysis (SPA) is an ill-posed problem and so the determined structure can be the specular (mirrored) version of the true underlying structure. Macromolecules in nature have a specific handedness and it is important for atomic fitting of the structure that the resolved structure has the correct hand. At high resolution this is easily determined by looking at the map in a viewer like Chimera but it can be really difficult at low resolutions of 4 to 5 Angstroms. HaPi is a deep learning pipeline to automatically determine the hand of the electron density map automatically for structures below 5 Angstroms of resolution.
+HaPi (Handedness Pipeline) is a pipeline used to determine the hand of cryoEM determined maps. Resolving 3D sturctures of macromolecules using Single Particle Analysis (SPA) is an ill-posed problem and so the determined structure can be the specular (mirrored) version of the true underlying structure. Macromolecules in nature have a specific handedness and it is important for atomic fitting of the structure that the resolved structure has the correct hand. At high resolution this is easily determined by looking at the map in a viewer like Chimera but it can be really difficult at resolutions of 4 to 5 Ångstroms. HaPi is a deep learning pipeline to automatically determine the hand of the electron density map automatically for structures below 5 Ångstroms of resolution.
 
 =====
 Setup
