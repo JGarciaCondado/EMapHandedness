@@ -1,9 +1,11 @@
+"""Creates torchdataset for training hand from previously generated dataset."""
+
 import os
 import torch
 
 from hapi.data import HandDataset
 
-# Variables
+# Torchdataset variables
 dataset_root = '../nrPDB/Dataset/1A/'
 torchDataset_root = '../nrPDB/torchDataset/handDataset'
 SSE_type = 'alpha'
@@ -17,7 +19,8 @@ dataset = HandDataset(dataset_root, SSE_type, c)
 trainsize = int(len(dataset)*trainsplit)
 valsize = int(len(dataset)*valsplit)
 testsize = len(dataset)-trainsize-valsize
-trainDataset, valDataset, testDataset = torch.utils.data.random_split(dataset, [trainsize, valsize, testsize])
+trainDataset, valDataset, testDataset = torch.utils.data.random_split(
+    dataset, [trainsize, valsize, testsize])
 
 # Save Datasets
 torch.save(trainDataset, os.path.join(torchDataset_root, 'trainDataset'))

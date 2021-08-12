@@ -192,14 +192,14 @@ class EM3DNet_extended(EM3DNet):
                 np.save(os.path.join(self.save_folder, 'trainloss'),
                         self.loss_during_training)
             if(e % self.verbose == 0):
-                print("Epoch % d. Training loss: % f, Validation loss: % f,
-                      Train accuracy: % f Validation accuracy % f
-                      Time per epoch: % f seconds"
+                print("Epoch %d. Training loss: %f, Validation loss: %f, \
+                      Train accuracy: %f Validation accuracy % f \
+                      Time per epoch: %f seconds"
                       % (e, self.loss_during_training[-1],
                          self.valid_loss_during_training[-1],
                          self.eval_performance(trainloader, self.num_batches),
                          self.eval_performance(validloader, self.num_batches),
-                         (time.time() - start_time)))
+                         (time.time() - start_time)), sep='')
 
     def eval_performance(self, dataloader, num_batches=10, threshold=0.5):
         """ Evaluate the model accuracy on a given dataset."""

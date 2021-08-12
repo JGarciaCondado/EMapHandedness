@@ -85,12 +85,12 @@ def process_experimental_map(map_file, filter_res):
                 (map_file, fnHash, pixel_size))
     # Filter to specified resolution
     if ok:
-        ok = runJob("xmipp_transform_filter -i %sResized.map -o %sFiltered.map
+        ok = runJob("xmipp_transform_filter -i %sResized.map -o %sFiltered.map \
                     --fourier low_pass %f --sampling 1"
                     % (fnHash, fnHash, filter_res))
     # Otsu segementation to obtain mask from non-filtered mask
     if ok:
-        ok = runJob("xmipp_volume_segment -i %sResized.map -o %sMask.map
+        ok = runJob("xmipp_volume_segment -i %sResized.map -o %sMask.map \
                     --method otsu" % (fnHash, fnHash))
     # Set filtered volume and mask
     if ok:

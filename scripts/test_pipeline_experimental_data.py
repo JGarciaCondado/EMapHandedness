@@ -1,3 +1,5 @@
+"""Test pipeline on experimental data from EMDB."""
+
 import numpy as np
 import mrcfile
 
@@ -20,7 +22,8 @@ Vf, Vmask = process_experimental_map(EMmap, filter_res)
 # Predict alphas
 batch_size = 2048
 alpha_probs = pipeline.model_alpha.predict_volume(Vf, Vmask, batch_size)
-with mrcfile.new('../nrPDB/Exp_maps/alpha_maps/%s.map' % ID, overwrite=True) as mrc:
+with mrcfile.new('../nrPDB/Exp_maps/alpha_maps/%s.map'
+                 % ID, overwrite=True) as mrc:
     mrc.set_data(np.zeros(alpha_probs.shape, dtype=np.float32))
     mrc.data[:, :, :] = alpha_probs
 

@@ -1,3 +1,5 @@
+"""Test a trained EM3DNet model with given dataset to find best epoch."""
+
 import torch
 import os
 import numpy as np
@@ -32,15 +34,19 @@ testdataset = torch.load(os.path.join(torchDataset_root, 'testDataset'))
 trainloader = DataLoader(traindataset, batch_size=batch_size,
                          shuffle=True, num_workers=2)
 valloader = DataLoader(valdataset, batch_size=batch_size,
-                         shuffle=True, num_workers=2)
+                       shuffle=True, num_workers=2)
 testloader = DataLoader(testdataset, batch_size=batch_size,
-                         shuffle=True, num_workers=2)
+                        shuffle=True, num_workers=2)
 
 # Load best model
-model = EM3DNet_extended(restore=True, save_folder=model_directory, init_model=epoch+'model_checkpoint.pth')
+model = EM3DNet_extended(restore=True, save_folder=model_directory,
+                         init_model=epoch+'model_checkpoint.pth')
 
 # Evaluate performance
 print("Evaluate model at epoch: %s" % epoch)
-print("Train accuracy: %f" % model.eval_performance(trainloader, num_batches=len(trainloader)))
-print("Validation accuracy: %f" % model.eval_performance(valloader, num_batches=len(valloader)))
-print("Test accuracy: %f" % model.eval_performance(testloader, num_batches=len(testloader)))
+print("Train accuracy: %f" % model.eval_performance(
+    trainloader, num_batches=len(trainloader)))
+print("Validation accuracy: %f" % model.eval_performance(
+    valloader, num_batches=len(valloader)))
+print("Test accuracy: %f" % model.eval_performance(
+    testloader, num_batches=len(testloader)))
