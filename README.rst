@@ -43,3 +43,38 @@ Using the command line:
 .. code-block:: shell
 
     source path/for/scipion/xmipp-bundle/build/xmipp.bashrc
+
+====
+Data
+====
+
+To download the data used a set of batch-downlaod shell scripts and the PDB and EMD IDs are available in **/data**.
+
+- Download PDBs used to simulate boxes
+
+Using the command line:
+
+.. code-block:: shell
+
+   chmod +x batch_download_pdb.sh 
+   ./batch_download_pdb.sh -f PDB_boxes_list.txt -o path/for/pdbs -p
+   gunzip path/for/pdbs/*.pdb.gz
+
+- Download PDBS used to simulate volumes
+
+Using the command line:
+
+.. code-block:: shell
+
+   chmod +x batch_download_pdb.sh 
+   ./batch_download_pdb.sh -f PDB_volumes_list.txt -o path/for/pdbs -p
+   gunzip path/for/pdbs/*.pdb.gz
+
+- Download Experimental cryoEM maps
+
+Using the command line:
+
+.. code-block:: shell
+
+   chmod +x batch_download_emdb.sh 
+   ./batch_download_emdb.sh -f emdb_list.txt -o path/for/emdmaps
