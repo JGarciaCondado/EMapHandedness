@@ -2,7 +2,7 @@
 HaPi - Handedness Pipeline
 ==========================
 
-
+HaPi (Handedness Pipeline) is a pipeline used to determine the hand of cryoEM determined maps. Resolving 3D sturctures of macromolecules using Single Particle Analysis (SPA) is an ill-posed problem and so the determined structure can be the specular (mirrored) version of the true underlying structure. Macromolecules in nature have a specific handedness and it is important for atomic fitting of the structure that the resolved structure has the correct hand. At high resolution this is easily determined by looking at the map in a viewer like Chimera but it can be really difficult at low resolutions of 4 to 5 Angstroms. HaPi is a deep learning pipeline to automatically determine the hand of the electron density map automatically for structures below 5 Angstroms of resolution.
 
 =====
 Setup
@@ -44,11 +44,22 @@ Using the command line:
 
     source path/for/scipion/xmipp-bundle/build/xmipp.bashrc
 
+=========
+Structure
+=========
+
+The are four main directories in this project:
+
+- **/data**: contains the required scripts and list of ids to download the data used for training and testing.
+- **/hapi**: package that contains a set of objects and functions to simulate data, train and test models.
+- **/scripts**: set of simple self-descriptive scripts using the hapi package to simulate data, train and test models.
+- **/models**: final models trained to be used by users.
+
 ====
 Data
 ====
 
-To download the data used a set of batch-downlaod shell scripts and the PDB and EMD IDs are available in **/data**.
+To download the data used a set of batch-download shell scripts and the PDB and EMD IDs are available in **/data**.
 
 - Download PDBs used to simulate boxes
 
@@ -60,7 +71,7 @@ Using the command line:
    ./batch_download_pdb.sh -f PDB_boxes_list.txt -o path/for/pdbs -p
    gunzip path/for/pdbs/*.pdb.gz
 
-- Download PDBS used to simulate volumes
+- Download PDBs used to simulate volumes
 
 Using the command line:
 
@@ -78,3 +89,4 @@ Using the command line:
 
    chmod +x batch_download_emdb.sh 
    ./batch_download_emdb.sh -f emdb_list.txt -o path/for/emdmaps
+
