@@ -32,26 +32,26 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold,
     # Obtain desired SSE pdb sections
     if ok:
         if SSE_type == 'alpha':
-            ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb \
-                        --keep_alpha %d" % (fnHash, fnHash, minresidues))
+            ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb "\
+                        "--keep_alpha %d" % (fnHash, fnHash, minresidues))
         elif SSE_type == 'beta':
-            ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb \
-                        --keep_beta %d" % (fnHash, fnHash, minresidues))
+            ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb "\
+                        "--keep_beta %d" % (fnHash, fnHash, minresidues))
         else:
             ok = False
     # Sample whole pdb
     if ok:
-        ok = runJob("xmipp_volume_from_pdb -i %s_centered.pdb -o %s \
-                    --sampling 1 -v 0" % (fnHash, fnHash))
+        ok = runJob("xmipp_volume_from_pdb -i %s_centered.pdb -o %s "\
+                    "--sampling 1 -v 0" % (fnHash, fnHash))
     # Filter to maxRes
     if ok:
-        ok = runJob("xmipp_transform_filter -i %s.vol -o %sFiltered.map \
-                    --fourier low_pass %f 0.02 --sampling 1 -v 0" %
+        ok = runJob("xmipp_transform_filter -i %s.vol -o %sFiltered.map "\
+                    "--fourier low_pass %f 0.02 --sampling 1 -v 0" %
                     (fnHash, fnHash, maxRes))
     # Create mask by thresholding
     if ok:
-        ok = runJob("xmipp_transform_threshold -i %sFiltered.map -o %sMask.map \
-                    --select below %f --substitute binarize -v 0" %
+        ok = runJob("xmipp_transform_threshold -i %sFiltered.map -o %sMask.map "\
+                    "--select below %f --substitute binarize -v 0" %
                     (fnHash, fnHash, mask_threshold))
     # Obtain volumes
     if ok:
@@ -63,12 +63,12 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold,
         Vf, Vmask = None, None
 
     if Vf is not None and Vmask is not None:
-        ok = runJob("xmipp_volume_from_pdb  -i %s_SSE.pdb -o %s_SSE --sampling \
-                    1 --size %d -v 0" % (fnHash, fnHash, Vf.shape[0]))
+        ok = runJob("xmipp_volume_from_pdb  -i %s_SSE.pdb -o %s_SSE --sampling "\
+                    "1 --size %d -v 0" % (fnHash, fnHash, Vf.shape[0]))
     # Create mask by thresholding
     if ok:
-        ok = runJob("xmipp_transform_threshold -i %s_SSE.vol -o %sMask_SSE.map \
-                    --select below %f --substitute binarize -v 0" %
+        ok = runJob("xmipp_transform_threshold -i %s_SSE.vol -o %sMask_SSE.map "\
+                    "--select below %f --substitute binarize -v 0" %
                     (fnHash, fnHash, SSE_mask_threshold))
     # Save mask
     if ok:
