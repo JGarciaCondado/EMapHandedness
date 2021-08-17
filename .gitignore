@@ -23,3 +23,6 @@ tmp*
 build/
 dist/
 HaPi.egg-info/
+
+# Ignore figures folders
+figures/
