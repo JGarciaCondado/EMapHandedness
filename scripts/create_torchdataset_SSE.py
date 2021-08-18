@@ -10,11 +10,10 @@ dataset_root = '../nrPDB/Dataset/5A'
 torchDataset_root = '../nrPDB/torchDataset/alphaDataset'
 SSE_type = 'alpha'
 trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
-c = 5
 flip = True
 
 # Generate Dataset
-dataset = SSEDataset(dataset_root, SSE_type, c, flip)
+dataset = SSEDataset(dataset_root, SSE_type, flip)
 
 # Split into different Datasets
 trainsize = int(len(dataset)*trainsplit)

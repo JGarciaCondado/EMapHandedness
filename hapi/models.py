@@ -49,6 +49,7 @@ class EM3DNet(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
+        # Assumes boxes have dimension 11x11x11
         # Pass the input tensor through the CNN operations
         x = self.conv1(x)
         x = self.relu(x)
@@ -227,13 +228,12 @@ class EM3DNet_extended(EM3DNet):
 class AlphaVolNet(EM3DNet):
     """Model that detects alpha helices within a volume."""
 
-    def __init__(self, trained_model, box_dim, c):
+    def __init__(self, trained_model):
 
         super().__init__()
 
-        # Dataset variables trained on
-        self.box_dim = box_dim
-        self.c = c
+        # Box dimensions set at 11x11x11 from design of CNN
+        self.box_dim = 11
 
         # Load devices availbale
         if torch.cuda.is_available():
@@ -262,7 +262,7 @@ class AlphaVolNet(EM3DNet):
 
     def normalize(self, box):
         """ Normalize boxes to between 0 and 1."""
-        box[box > self.c] = self.c
+
         box[box < 0] = 0
         if np.min(box) != np.max(box):
             box = (box-np.min(box))/(np.max(box)-np.min(box))
@@ -340,13 +340,12 @@ class AlphaVolNet(EM3DNet):
 class HandNet(EM3DNet):
     """Model that predicts a volumes handedness from given alpha mask."""
 
-    def __init__(self, trained_model, box_dim, c):
+    def __init__(self, trained_model):
 
         super().__init__()
 
-        # Dataset variables trained on
-        self.box_dim = box_dim
-        self.c = c
+        # Box dimensions set at 11x11x11 from design of CNN
+        self.box_dim = 11
 
         # Load devices availbale
         if torch.cuda.is_available():
@@ -376,7 +375,6 @@ class HandNet(EM3DNet):
     def normalize(self, box):
         """Normalize boxes to between 0 and 1."""
 
-        box[box > self.c] = self.c
         box[box < 0] = 0
         if np.min(box) != np.max(box):
             box = (box-np.min(box))/(np.max(box)-np.min(box))
@@ -435,11 +433,11 @@ class HaPi():
         electron density map volume its handedness.
     """
 
-    def __init__(self, alpha_model, hand_model, box_dim, c):
+    def __init__(self, alpha_model, hand_model):
 
         # Load models
-        self.model_alpha = AlphaVolNet(alpha_model, box_dim, c)
-        self.model_hand = HandNet(hand_model, box_dim, c)
+        self.model_alpha = AlphaVolNet(alpha_model)
+        self.model_hand = HandNet(hand_model)
 
     def predict(self, Vf, Vmask, thr, batch_size):
         """ Predict handedness of an electron desnity map.

@@ -10,10 +10,9 @@ dataset_root = '../nrPDB/Dataset/1A/'
 torchDataset_root = '../nrPDB/torchDataset/handDataset'
 SSE_type = 'alpha'
 trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
-c = 5
 
 # Generate Dataset
-dataset = HandDataset(dataset_root, SSE_type, c)
+dataset = HandDataset(dataset_root, SSE_type)
 
 # Split into different Datasets
 trainsize = int(len(dataset)*trainsplit)

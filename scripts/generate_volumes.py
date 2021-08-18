@@ -5,15 +5,15 @@ from hapi.simulator import create_volume_dataset
 from hapi.data import VolDataset
 
 # Variables
-data_root = '../nrPDB/PDB_test/'
-dataset_root = '../nrPDB/Dataset/Volumes'
-torchDataset_root = '../nrPDB/torchDataset/Volumes'
+data_root = 'nrPDB/PDB_test/'
+dataset_root = 'nrPDB/Dataset/Volumes'
+torchDataset_root = 'nrPDB/torchDataset/Volumes'
 SSE_type = 'alpha'
 maxRes = 5.0
 mask_threshold = 0.5
 SSE_mask_threshold = 0.5
 minresidues = 7
-restart = True
+restart = False
 valsplit = 0.3
 
 # Create dataset

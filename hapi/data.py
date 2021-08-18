@@ -8,11 +8,10 @@ import torch
 
 class SSEDataset(torch.utils.data.Dataset):
     """Loads boxes previously created and assigns them SSE labels."""
-    def __init__(self, dataset_root, SSE_type, c, flip):
+    def __init__(self, dataset_root, SSE_type, flip):
         self.dataset_root = dataset_root
         self.dataset_table = None
         self.SSE_type = SSE_type
-        self.c = c
         self.flip = flip
         self._init_dataset()
 
@@ -56,8 +55,6 @@ class SSEDataset(torch.utils.data.Dataset):
         """Normalizes boxes to the range 0 to 1."""
         # Change negative values to zeros
         box[box < 0.0] = 0.0
-        # Change values greater than c to c
-        box[box > self.c] = self.c
         # Normalize to [0,1]
         if np.min(box) != np.max(box):
             box = (box-np.min(box))/(np.max(box)-np.min(box))
@@ -68,11 +65,10 @@ class SSEDataset(torch.utils.data.Dataset):
 class HandDataset(torch.utils.data.Dataset):
     """Loads boxes previously created and assigns them a hand."""
 
-    def __init__(self, dataset_root, SSE_type, c):
+    def __init__(self, dataset_root, SSE_type):
         self.dataset_root = dataset_root
         self.dataset_table = None
         self.SSE_type = SSE_type
-        self.c = c
         self._init_dataset()
 
     def __len__(self):
@@ -111,8 +107,6 @@ class HandDataset(torch.utils.data.Dataset):
         """Normalizes boxes to the range 0 to 1."""
         # Change negative values to zeros
         box[box < 0.0] = 0.0
-        # Change values greater than c to c
-        box[box > self.c] = self.c
         # Normalize to [0,1]
         if np.min(box) != np.max(box):
             box = (box-np.min(box))/(np.max(box)-np.min(box))
