@@ -8,11 +8,12 @@ import torch
 
 class SSEDataset(torch.utils.data.Dataset):
     """Loads boxes previously created and assigns them SSE labels."""
-    def __init__(self, dataset_root, SSE_type, flip):
+    def __init__(self, dataset_root, SSE_type, flip, noise):
         self.dataset_root = dataset_root
         self.dataset_table = None
         self.SSE_type = SSE_type
         self.flip = flip
+        self.noise = noise
         self._init_dataset()
 
     def __len__(self):
@@ -58,7 +59,10 @@ class SSEDataset(torch.utils.data.Dataset):
         # Normalize to [0,1]
         if np.min(box) != np.max(box):
             box = (box-np.min(box))/(np.max(box)-np.min(box))
-
+        if self.noise is not None:
+            box = box + np.random.normal(0, self.noise, size=box.shape).astype(box.dtype)
+            box[box<0.0] = 0.0
+            box[box>1.0] = 1.0
         return box
 
 

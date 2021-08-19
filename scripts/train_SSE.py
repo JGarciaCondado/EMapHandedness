@@ -8,8 +8,8 @@ from hapi.data import SSEDataset
 from hapi.models import EM3DNet_extended
 
 # Training variables
-torchDataset_root = '../nrPDB/torchDataset/alphaDataset'
-save_folder = '../Models/'
+torchDataset_root = 'nrPDB/torchDataset/alphaDataset'
+save_folder = 'Models/'
 batch_size = 1048
 epochs = 50
 verbose = 1
