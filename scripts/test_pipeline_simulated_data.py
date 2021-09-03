@@ -15,15 +15,15 @@ hand_model = 'models/5A_hand_model.pth'
 pipeline = HaPi(alpha_model, hand_model)
 
 # Predictions variables
-thr = 0.5
+thr = 0.7
 batch_size = 2048
 
 # Load data
 torchDataset_root = 'nrPDB/torchDataset/Volumes'
-dataset = torch.load(os.path.join(torchDataset_root, 'valDataset'))
+dataset = torch.load(os.path.join(torchDataset_root, 'testDataset'))
 
 # Evaluate data
-save_file = 'metrics/boxvolumes.csv'
+save_file = 'metrics/test_data.csv'
 PDB_names = []
 precision_vals = []
 TPs = []
@@ -60,7 +60,7 @@ for PDB, hand, vol in tqdm(dataset):
     handedness_vals.append(hand)
     predict_hands.append(pred_h)
 
-pd.set_option('display.max_rows', None)
+#pd.set_option('display.max_rows', None)
 df = pd.DataFrame(list(zip(TPs, FPs, precision_vals,
                            predict_hands, handedness_vals, handedness_acc)),
                   index=PDB_names, columns=['TPs', 'FPs', 'Precision',

@@ -10,8 +10,8 @@ from hapi.data import SSEDataset, HandDataset
 from hapi.models import EM3DNet_extended
 
 # Variables
-torchDataset_root = '../nrPDB/torchDataset/handDataset'
-model_directory = '../Models/'
+torchDataset_root = 'nrPDB/torchDataset/5ABeta/handDataset'
+model_directory = 'Models/5ABeta/handedness/'
 batch_size = 1024
 
 # Load validation and test loss
@@ -25,28 +25,16 @@ plt.show()
 # Ask for epoch
 epoch = input('Epoch to evaluate at: ')
 
-# Load Dataset
-traindataset = torch.load(os.path.join(torchDataset_root, 'trainDataset'))
-valdataset = torch.load(os.path.join(torchDataset_root, 'valDataset'))
+# Load Test Dataset
 testdataset = torch.load(os.path.join(torchDataset_root, 'testDataset'))
-
-# Create Loaders
-trainloader = DataLoader(traindataset, batch_size=batch_size,
-                         shuffle=True, num_workers=2)
-valloader = DataLoader(valdataset, batch_size=batch_size,
-                       shuffle=True, num_workers=2)
 testloader = DataLoader(testdataset, batch_size=batch_size,
                         shuffle=True, num_workers=2)
 
 # Load best model
 model = EM3DNet_extended(restore=True, save_folder=model_directory,
-                         init_model=epoch+'model_checkpoint.pth')
+                         init_model=model_directory+epoch+'model_checkpoint.pth')
 
 # Evaluate performance
 print("Evaluate model at epoch: %s" % epoch)
-print("Train accuracy: %f" % model.eval_performance(
-    trainloader, num_batches=len(trainloader)))
-print("Validation accuracy: %f" % model.eval_performance(
-    valloader, num_batches=len(valloader)))
 print("Test accuracy: %f" % model.eval_performance(
     testloader, num_batches=len(testloader)))

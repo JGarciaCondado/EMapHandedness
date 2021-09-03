@@ -6,9 +6,9 @@ import torch
 from hapi.data import HandDataset
 
 # Torchdataset variables
-dataset_root = '../nrPDB/Dataset/1A/'
-torchDataset_root = '../nrPDB/torchDataset/handDataset'
-SSE_type = 'alpha'
+dataset_root = 'nrPDB/Dataset/1ABeta/'
+torchDataset_root = 'nrPDB/torchDataset/1ABeta/handDataset'
+SSE_type = 'beta'
 trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
 
 # Generate Dataset

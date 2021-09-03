@@ -8,10 +8,10 @@ from hapi.data import HandDataset
 from hapi.models import EM3DNet_extended
 
 # Training variables
-torchDataset_root = '../nrPDB/torchDataset/handDataset'
-save_folder = '../Models'
-restore = False
-init_model = '1A_model_hand.pth'
+torchDataset_root = 'nrPDB/torchDataset/5ABeta/handDataset'
+save_folder = 'Models/5ABeta/handedness'
+restore = True
+init_model = 'models/1A_hand_beta.pth'
 batch_size = 1048
 epochs = 50
 verbose = 1

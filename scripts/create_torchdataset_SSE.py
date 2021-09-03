@@ -6,12 +6,12 @@ import os
 from hapi.data import SSEDataset
 
 # Torchdataset variables
-dataset_root = 'nrPDB/Dataset/5A'
-torchDataset_root = 'nrPDB/torchDataset/alphaDataset'
-SSE_type = 'alpha'
+dataset_root = 'nrPDB/Dataset/1ABeta'
+torchDataset_root = 'nrPDB/torchDataset/1ABeta/betaDataset'
+SSE_type = 'beta'
 trainsplit, valsplit, testsplit = 0.7, 0.15, 0.15
 flip = True
-noise = 0.15
+noise = None
 
 # Generate Dataset
 dataset = SSEDataset(dataset_root, SSE_type, flip, noise)
