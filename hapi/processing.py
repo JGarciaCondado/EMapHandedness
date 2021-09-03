@@ -8,6 +8,12 @@ from .utils import runJob, createHash
 from scipy.ndimage.morphology import binary_erosion
 from skimage import measure
 
+def mrc_mask_to_binary(Mask, thr=0.01):
+    """Mrc files are not binary so have to be converted back a threshold slighlty
+    higher than 0 is chosen due to numerical errors"""
+    Mask[Mask<thr] = 0
+    Mask[Mask>0] = 1
+    return Mask
 
 def get_SSE_centroids(Vmask_SSE, SE):
     """From the mask obtain the centroids of each of the SSE identified."""
@@ -70,6 +76,25 @@ def get_no_SSE_centroids(Vmask_no_SSE, n_centroids):
     else:
         return None
 
+def extract_all_boxes(Vf, Vmask, Vmask_SSE, box_dim, SE_centroids,
+                      SE_noSSEMask):
+    """For a PDB extract SSE helices and boxes not containg SSE helices."""
+    # Get SSE centroids
+    SSE_centroids = get_SSE_centroids(Vmask_SSE, SE_centroids)
+    # Extract SSE boxes
+    SSE_boxes = extract_boxes(Vf, SSE_centroids, box_dim)
+    # Get volume mask with no SSEs
+    Vmask_no_SSE = get_mask_no_SSE(Vmask, Vmask_SSE, SE_noSSEMask)
+    # Sample centroids from mask containing no SSEs
+    no_SSE_centroids = get_no_SSE_centroids(Vmask_no_SSE, len(SSE_centroids))
+    # Extract no SSE boxes
+    if no_SSE_centroids is not None:
+        no_SSE_boxes = extract_boxes(Vf, no_SSE_centroids, box_dim)
+    else:
+        no_SSE_boxes = None
+
+    return SSE_boxes, no_SSE_boxes
+
 
 def process_experimental_map(map_file, filter_res):
     """Filter and resample experimental maps to given resolution."""
@@ -77,6 +102,7 @@ def process_experimental_map(map_file, filter_res):
     # Assume all pixel sizes are equal and take x dimension
     with mrcfile.open(map_file) as mrc:
         pixel_size = mrc.voxel_size['x']
+
     # Create temporary name
     fnHash = createHash()
 
