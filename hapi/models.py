@@ -112,7 +112,7 @@ class EM3DNet_extended(EM3DNet):
         if restore:
             if self.init_model is not None:
                 state_dict = torch.load(
-                    os.path.join(self.save_folder, self.init_model),
+                    os.path.join(self.init_model),
                     map_location=self.device)
             else:
                 state_dict = torch.load(
