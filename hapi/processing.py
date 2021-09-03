@@ -8,6 +8,12 @@ from .utils import runJob, createHash
 from scipy.ndimage.morphology import binary_erosion
 from skimage import measure
 
+def mrc_mask_to_binary(Mask, thr=0.01):
+    """Mrc files are not binary so have to be converted back a threshold slighlty
+    higher than 0 is chosen due to numerical errors"""
+    Mask[Mask<thr] = 0
+    Mask[Mask>0] = 1
+    return Mask
 
 def get_SSE_centroids(Vmask_SSE, SE):
     """From the mask obtain the centroids of each of the SSE identified."""
@@ -70,12 +76,9 @@ def get_no_SSE_centroids(Vmask_no_SSE, n_centroids):
     else:
         return None
 
-def extract_boxes_PDB(Vf, Vmask, Vmask_SSE, box_dim, SE_centroids,
+def extract_all_boxes(Vf, Vmask, Vmask_SSE, box_dim, SE_centroids,
                       SE_noSSEMask):
     """For a PDB extract SSE helices and boxes not containg SSE helices."""
-    # Exit if simulation unsuccesfull
-    if Vf is None or Vmask is None or Vmask_SSE is None:
-        return None, None
     # Get SSE centroids
     SSE_centroids = get_SSE_centroids(Vmask_SSE, SE_centroids)
     # Extract SSE boxes
@@ -104,16 +107,16 @@ def process_experimental_map(map_file, filter_res):
     fnHash = createHash()
 
     # Resize to pixel size of 1A/pixel
-    ok = runJob("xmipp_image_resize -i %s -o %sResized.vol --factor %f" %
+    ok = runJob("xmipp_image_resize -i %s -o %sResized.map --factor %f" %
                 (map_file, fnHash, pixel_size))
     # Filter to specified resolution
     if ok:
-        ok = runJob("xmipp_transform_filter -i %sResized.vol -o %sFiltered.map "\
+        ok = runJob("xmipp_transform_filter -i %sResized.map -o %sFiltered.map "\
                     "--fourier low_pass %f --sampling 1"
                     % (fnHash, fnHash, filter_res))
     # Otsu segementation to obtain mask from non-filtered mask
     if ok:
-        ok = runJob("xmipp_volume_segment -i %sResized.vol -o %sMask.map "\
+        ok = runJob("xmipp_volume_segment -i %sResized.map -o %sMask.map "\
                     "--method otsu" % (fnHash, fnHash))
     # Set filtered volume and mask
     if ok:

@@ -58,7 +58,7 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold,
         with mrcfile.open("%sFiltered.map" % fnHash) as mrc:
             Vf = mrc.data.copy()
         with mrcfile.open("%sMask.map" % fnHash) as mrc:
-            Vmask = mrc.data.copy()
+            Vmask = mrc_mask_to_binary(mrc.data.copy())
     else:
         Vf, Vmask = None, None
 
@@ -73,7 +73,7 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold,
     # Save mask
     if ok:
         with mrcfile.open("%sMask_SSE.map" % fnHash) as mrc:
-            Vmask_SSE = mrc.data.copy()
+            Vmask_SSE = mrc_mask_to_binary(mrc.data.copy())
     else:
         Vmask_SSE = None
     # Remove all temporary files produced
@@ -102,11 +102,11 @@ def create_experimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
     # Resize experimental map to same as simulated map
     with mrcfile.open(exp_map) as mrc:
         pixel_size = mrc.voxel_size['x']
-    ok = runJob("xmipp_image_resize -i %s -o %sResized.vol --factor %f" %
+    ok = runJob("xmipp_image_resize -i %s -o %sResized.map --factor %f" %
                 (exp_map, fnHash, pixel_size))
     # Filter to same resolution as simulated map
     if ok:
-        ok = runJob("xmipp_transform_filter -i %sResized.vol -o %sExpFil.map "\
+        ok = runJob("xmipp_transform_filter -i %sResized.map -o %sExpFil.map "\
                     "--fourier low_pass %f --sampling 1"
                     % (fnHash, fnHash, maxRes))
     # Center pdb
@@ -168,9 +168,9 @@ def create_experimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
     # Obtain fitlered experimental map and masks
     if ok:
         with mrcfile.open("%sMask_SSE_transform.map" % fnHash) as mrc:
-            Vmask_SSE = mrc.data.copy()
+            Vmask_SSE = mrc_mask_to_binary(mrc.data.copy())
         with mrcfile.open("%sMask_transform.map" % fnHash) as mrc:
-            Vmask = mrc.data.copy()
+            Vmask = mrc_mask_to_binary(mrc.data.copy())
         with mrcfile.open("%sExpFil.map" % fnHash) as mrc:
             Vf = mrc.data.copy()
     else:
@@ -182,9 +182,9 @@ def create_experimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
 
     return Vf, Vmask, Vmask_SSE
 
-def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold,
-                       SSE_mask_threshold, SSE_type, minresidues, box_dim,
-                       SE_centroids, SE_noSSEMask, restart=False):
+def create_SSE_dataset_pdb(data_root, dataset_root, maxRes, mask_threshold,
+                           SSE_mask_threshold, SSE_type, minresidues, box_dim,
+                           SE_centroids, SE_noSSEMask, restart=False):
     """Create the dataset of boxesfrom a directory containg all the PDBs
 
     Parameters:
@@ -222,7 +222,7 @@ def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold,
         # Skip if simulation unsuccesfull
         if Vf is None or Vmask is None or Vmask_SSE is None:
             continue
-        SSE_boxes, no_SSE_boxes = extract_boxes_PDB(Vf, Vmask,
+        SSE_boxes, no_SSE_boxes = extract_all_boxes(Vf, Vmask,
             Vmask_SSE, box_dim, SE_centroids, SE_noSSEMask)
         if SSE_boxes is not None and no_SSE_boxes is not None:
             # Create directory with pdb name
