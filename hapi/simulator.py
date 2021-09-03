@@ -242,6 +242,62 @@ def create_SSE_dataset_pdb(data_root, dataset_root, maxRes, mask_threshold,
                     np.save(dataset_root+PDB[:-4]+'/no_%s/' %
                             SSE_type+'box%d.npy' % i, box)
 
+def create_SSE_dataset_exp(pdb_files, em_files, dataset_root, maxRes,
+                           mask_threshold, minresidues, box_dim,
+                           SE_centroids, SE_noSSEMask, restart=False):
+    """Create the dataset of boxes from experimental data and their pdbs
+
+    Parameters:
+    -----------
+    pdb_files -- List containing all pdb files
+    em_files -- List containing all experimental emdb files
+    dataset_root -- Directory to save dataset to.
+    maxRes -- Resolution to filter volume at.
+    mask_threshold -- Threshold to obtain non-background voxels.
+    minresidues -- Minimum number of residues to identify it as an SSE.
+        Recommended: alpha use 7 as this are two turns
+                     beta use 4 as the sheets are smaller
+    boxdim -- Odd integer that defines box size (recommended 11)
+    SE_centroids -- Sturcture element to obtain better centroids
+        Recommended: alpha np.ones((3,3,3)) as they are bulkier
+                     beta np.ones((2,2,2)) as they are thinner structures.
+    SE_noSSEMask -- Structure element to avoid capturing small part of SSE
+    restart -- Restart whole dataset simulation (default False)
+    """
+    # Create dataset direcotry if it doesn't exist
+    create_directory(dataset_root)
+    for PDB, EM_map in zip(pdb_files, em_files):
+        print(PDB, EM_map)
+        # If PDB dataset already there in case errors cause restart
+        # Ignore if we want to redo the complete dataset
+        if os.path.isdir(dataset_root+'/'+PDB[:-4]) and not restart:
+            continue
+        # Obtain volumes
+        Vf, Vmask, Vmask_SSE = create_experimental_alpha_mask(PDB, EM_map,
+            minresidues, maxRes, mask_threshold)
+        # Obtain boxes
+        # Skip if simulation unsuccesfull
+        if Vf is None or Vmask is None or Vmask_SSE is None:
+            continue
+        SSE_boxes, no_SSE_boxes = extract_all_boxes(Vf, Vmask,
+            Vmask_SSE, box_dim, SE_centroids, SE_noSSEMask)
+        if SSE_boxes is not None and no_SSE_boxes is not None:
+            # Create directory with pdb name
+            create_directory(dataset_root+'/'+PDB[:-4])
+            # Create subdirecotries to store SSE and no SSE
+            create_directory(dataset_root+'/'+PDB[:-4]+'/alpha')
+            create_directory(dataset_root+'/'+PDB[:-4]+'/no_alpha')
+            # Save the different boxes
+            for i, box in enumerate(SSE_boxes):
+                # Check correct box dimensions it might be boxes were in a
+                # corner and have uneven box dimensions
+                if box.shape == (box_dim, box_dim, box_dim):
+                    np.save(dataset_root+'/'+PDB[:-4]+'/alpha/'
+                            +'box%d.npy' % i, box)
+            for i, box in enumerate(no_SSE_boxes):
+                if box.shape == (box_dim, box_dim, box_dim):
+                    np.save(dataset_root+'/'+PDB[:-4]+'/no_alpha/'
+                            +'box%d.npy' % i, box)
 
 def create_volume_dataset(data_root, dataset_root, maxRes, mask_threshold,
                           SSE_mask_threshold, SSE_type, minresidues,
