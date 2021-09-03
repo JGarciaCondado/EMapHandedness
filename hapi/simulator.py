@@ -81,6 +81,106 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold,
 
     return Vf, Vmask, Vmask_SSE
 
+def create_exprimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
+                                  mask_threshold):
+    """Obtain a mask of alpha helices from PDB and aligned to experimental map.
+
+    First filter experimental map to desired resolution. Then simulate a map
+    from PDB and align this with the experimentla map. Then obtain a mask of
+    alpha helices and the structure from simulated structure and align.
+
+    Parameters:
+    -----------
+    PDB -- Path to pdb file.
+    exp_map -- Path to experimental file.
+    maxRes -- Resolution to filter volume at.
+    mask_threshold -- Threshold to obtain non-background voxels.
+    minresidues -- Minimum number of residues to identify it as an SSE.
+    """
+    # Create temporary name
+    fnHash = createHash()
+    # Resize experimental map to same as simulated map
+    with mrcfile.open(exp_map) as mrc:
+        pixel_size = mrc.voxel_size['x']
+    ok = runJob("xmipp_image_resize -i %s -o %sResized.vol --factor %f" %
+                (exp_map, fnHash, pixel_size))
+    # Filter to same resolution as simulated map
+    if ok:
+        ok = runJob("xmipp_transform_filter -i %sResized.vol -o %sExpFil.map "\
+                    "--fourier low_pass %f --sampling 1"
+                    % (fnHash, fnHash, maxRes))
+    # Center pdb
+    if ok:
+        ok = runJob("xmipp_pdb_center -i %s -o %s_centered.pdb"
+                    % (PDB, fnHash))
+    # Obtain desired SSE pdb sections
+    if ok:
+        ok = runJob("xmipp_pdb_select -i %s_centered.pdb -o %s_SSE.pdb "\
+                    "--keep_alpha %d" % (fnHash, fnHash, minresidues))
+    # Sample whole pdb
+    if ok:
+        # Find experimental map size after filtering
+        with mrcfile.open("%sExpFil.map"%fnHash) as mrc:
+            [s_x, s_y, s_z] = mrc.data.shape
+        ok = runJob("xmipp_volume_from_pdb -i %s_centered.pdb -o %s "\
+                    "--sampling 1 --size %d %d %d -v 0"
+                    % (fnHash, fnHash, s_x, s_y, s_z))
+    # Filter to maxRes
+    if ok:
+        ok = runJob("xmipp_transform_filter -i %s.vol -o %sFiltered.map "\
+                    "--fourier low_pass %f 0.02 --sampling 1 -v 0" %
+                    (fnHash, fnHash, maxRes))
+    # Create mask by thresholding
+    if ok:
+        ok = runJob("xmipp_transform_threshold -i %sFiltered.map -o %sMask.map "\
+                    "--select below %f --substitute binarize -v 0" %
+                    (fnHash, fnHash, mask_threshold))
+    # Create volume of alpha
+    if ok:
+        ok = runJob("xmipp_volume_from_pdb  -i %s_SSE.pdb -o %s_SSE --sampling "\
+                    "1 --size %d %d %d -v 0" % (fnHash, fnHash, s_x, s_y, s_z))
+    # Create mask by thresholding
+    if ok:
+        ok = runJob("xmipp_transform_threshold -i %s_SSE.vol -o %sMask_SSE.map "\
+                    "--select below %f --substitute binarize -v 0" %
+                    (fnHash, fnHash, mask_threshold))
+    # Align experimental and simulated maps with shifts
+    if ok:
+        ok = runJob("xmipp_volume_align --i1 %sExpFil.map --i2 %sFiltered.map "\
+                    "--onlyShift --local --store %sTransform.txt"
+                    % (fnHash, fnHash, fnHash))
+    # Transform alpha mask to algin with experimental
+    if ok:
+        with open('%sTransform.txt'%fnHash, 'r') as f:
+            [sh_x, sh_y, sh_z] = f.readline().strip().split(',')[3:6]
+        # Round as mask would need nearest neighbor interpolation but its not
+        # avaible so using integer shifts achieves the same
+        ok = runJob("xmipp_transform_geometry -i %sMask_SSE.map -o "\
+                    "%sMask_SSE_transform.map --shift %f %f %f" %
+                    (fnHash, fnHash, round(float(sh_x)),
+                     round(float(sh_y)), round(float(sh_z))))
+    # Transform mask to algin with experimental
+    if ok:
+        ok = runJob("xmipp_transform_geometry -i %sMask.map -o "\
+                    "%sMask_transform.map --shift %f %f %f" %
+                    (fnHash, fnHash, round(float(sh_x)),
+                     round(float(sh_y)), round(float(sh_z))))
+    # Obtain fitlered experimental map and masks
+    if ok:
+        with mrcfile.open("%sMask_SSE_transform.map" % fnHash) as mrc:
+            Vmask_SSE = mrc.data.copy()
+        with mrcfile.open("%sMask_transform.map" % fnHash) as mrc:
+            Vmask = mrc.data.copy()
+        with mrcfile.open("%sExpFil.map" % fnHash) as mrc:
+            Vf = mrc.data.copy()
+    else:
+        Vmask_SSE = None
+        Vmask = None
+        Vf = None
+    # Remove all temporary files produced
+    os.system("rm -f %s*" % fnHash)
+
+    return Vf, Vmask, Vmask_SSE
 
 def extract_boxes_PDB(PDB, maxRes, mask_threshold, SSE_mask_threshold,
                       SSE_type, minresidues, box_dim, SE_centroids,
