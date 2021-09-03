@@ -266,8 +266,7 @@ def create_SSE_dataset_exp(pdb_files, em_files, dataset_root, maxRes,
     """
     # Create dataset direcotry if it doesn't exist
     create_directory(dataset_root)
-    for PDB, EM_map in zip(pdb_files, em_files):
-        print(PDB, EM_map)
+    for PDB, EM_map in tqdm(zip(pdb_files, em_files), total=len(pdb_files)):
         # If PDB dataset already there in case errors cause restart
         # Ignore if we want to redo the complete dataset
         if os.path.isdir(dataset_root+'/'+PDB[:-4]) and not restart:
