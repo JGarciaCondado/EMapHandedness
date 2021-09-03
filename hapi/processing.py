@@ -70,6 +70,28 @@ def get_no_SSE_centroids(Vmask_no_SSE, n_centroids):
     else:
         return None
 
+def extract_boxes_PDB(Vf, Vmask, Vmask_SSE, box_dim, SE_centroids,
+                      SE_noSSEMask):
+    """For a PDB extract SSE helices and boxes not containg SSE helices."""
+    # Exit if simulation unsuccesfull
+    if Vf is None or Vmask is None or Vmask_SSE is None:
+        return None, None
+    # Get SSE centroids
+    SSE_centroids = get_SSE_centroids(Vmask_SSE, SE_centroids)
+    # Extract SSE boxes
+    SSE_boxes = extract_boxes(Vf, SSE_centroids, box_dim)
+    # Get volume mask with no SSEs
+    Vmask_no_SSE = get_mask_no_SSE(Vmask, Vmask_SSE, SE_noSSEMask)
+    # Sample centroids from mask containing no SSEs
+    no_SSE_centroids = get_no_SSE_centroids(Vmask_no_SSE, len(SSE_centroids))
+    # Extract no SSE boxes
+    if no_SSE_centroids is not None:
+        no_SSE_boxes = extract_boxes(Vf, no_SSE_centroids, box_dim)
+    else:
+        no_SSE_boxes = None
+
+    return SSE_boxes, no_SSE_boxes
+
 
 def process_experimental_map(map_file, filter_res):
     """Filter and resample experimental maps to given resolution."""
@@ -77,20 +99,21 @@ def process_experimental_map(map_file, filter_res):
     # Assume all pixel sizes are equal and take x dimension
     with mrcfile.open(map_file) as mrc:
         pixel_size = mrc.voxel_size['x']
+
     # Create temporary name
     fnHash = createHash()
 
     # Resize to pixel size of 1A/pixel
-    ok = runJob("xmipp_image_resize -i %s -o %sResized.map --factor %f" %
+    ok = runJob("xmipp_image_resize -i %s -o %sResized.vol --factor %f" %
                 (map_file, fnHash, pixel_size))
     # Filter to specified resolution
     if ok:
-        ok = runJob("xmipp_transform_filter -i %sResized.map -o %sFiltered.map "\
+        ok = runJob("xmipp_transform_filter -i %sResized.vol -o %sFiltered.map "\
                     "--fourier low_pass %f --sampling 1"
                     % (fnHash, fnHash, filter_res))
     # Otsu segementation to obtain mask from non-filtered mask
     if ok:
-        ok = runJob("xmipp_volume_segment -i %sResized.map -o %sMask.map "\
+        ok = runJob("xmipp_volume_segment -i %sResized.vol -o %sMask.map "\
                     "--method otsu" % (fnHash, fnHash))
     # Set filtered volume and mask
     if ok:

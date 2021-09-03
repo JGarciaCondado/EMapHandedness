@@ -81,7 +81,7 @@ def simulate_volume(PDB, maxRes, mask_threshold, SSE_mask_threshold,
 
     return Vf, Vmask, Vmask_SSE
 
-def create_exprimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
+def create_experimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
                                   mask_threshold):
     """Obtain a mask of alpha helices from PDB and aligned to experimental map.
 
@@ -182,33 +182,6 @@ def create_exprimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
 
     return Vf, Vmask, Vmask_SSE
 
-def extract_boxes_PDB(PDB, maxRes, mask_threshold, SSE_mask_threshold,
-                      SSE_type, minresidues, box_dim, SE_centroids,
-                      SE_noSSEMask):
-    """For a PDB extract SSE helices and boxes not containg SSE helices."""
-    # Get volumes
-    Vf, Vmask, Vmask_SSE = simulate_volume(
-        PDB, maxRes, mask_threshold, SSE_mask_threshold, SSE_type, minresidues)
-    # Exit if simulation unsuccesfull
-    if Vf is None or Vmask is None or Vmask_SSE is None:
-        return None, None
-    # Get SSE centroids
-    SSE_centroids = get_SSE_centroids(Vmask_SSE, SE_centroids)
-    # Extract SSE boxes
-    SSE_boxes = extract_boxes(Vf, SSE_centroids, box_dim)
-    # Get volume mask with no SSEs
-    Vmask_no_SSE = get_mask_no_SSE(Vmask, Vmask_SSE, SE_noSSEMask)
-    # Sample centroids from mask containing no SSEs
-    no_SSE_centroids = get_no_SSE_centroids(Vmask_no_SSE, len(SSE_centroids))
-    # Extract no SSE boxes
-    if no_SSE_centroids is not None:
-        no_SSE_boxes = extract_boxes(Vf, no_SSE_centroids, box_dim)
-    else:
-        no_SSE_boxes = None
-
-    return SSE_boxes, no_SSE_boxes
-
-
 def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold,
                        SSE_mask_threshold, SSE_type, minresidues, box_dim,
                        SE_centroids, SE_noSSEMask, restart=False):
@@ -242,10 +215,15 @@ def create_SSE_dataset(data_root, dataset_root, maxRes, mask_threshold,
         # Ignore if we want to redo the complete dataset
         if os.path.isdir(dataset_root+PDB[:-4]) and not restart:
             continue
+        # Obtain volumes
+        Vf, Vmask, Vmask_SSE = simulate_volume(data_root+PDB, maxRes,
+            mask_threshold, SSE_mask_threshold, SSE_type, minresidues)
         # Obtain boxes
-        SSE_boxes, no_SSE_boxes = extract_boxes_PDB(data_root+PDB, maxRes,
-            mask_threshold, SSE_mask_threshold, SSE_type, minresidues,
-            box_dim, SE_centroids, SE_noSSEMask)
+        # Skip if simulation unsuccesfull
+        if Vf is None or Vmask is None or Vmask_SSE is None:
+            continue
+        SSE_boxes, no_SSE_boxes = extract_boxes_PDB(Vf, Vmask,
+            Vmask_SSE, box_dim, SE_centroids, SE_noSSEMask)
         if SSE_boxes is not None and no_SSE_boxes is not None:
             # Create directory with pdb name
             create_directory(dataset_root+PDB[:-4])
