@@ -312,9 +312,9 @@ def create_SSE_dataset_exp(pdb_files, em_files, dataset_root, maxRes,
                     np.save(dataset_root+'/'+PDB[-8:-4]+'/no_alpha/'
                             +'box%d.npy' % i, box)
 
-def create_volume_dataset(data_root, dataset_root, maxRes, mask_threshold,
-                          SSE_mask_threshold, SSE_type, minresidues,
-                          restart=False):
+def create_volume_dataset_pdb(data_root, dataset_root, maxRes, mask_threshold,
+                              SSE_mask_threshold, SSE_type, minresidues,
+                              restart=False):
     """Create dataset of volumes from a directory containg all the PDBs
 
     Parameters:
@@ -347,3 +347,34 @@ def create_volume_dataset(data_root, dataset_root, maxRes, mask_threshold,
             # Save all volumes
             data = np.stack([Vf, Vmask, Vmask_SSE])
             np.save(dataset_root+'/%s.npy' % PDB[:-4], data)
+
+def create_volume_dataset_exp(pdb_files,  em_files, dataset_root, maxRes,
+                              mask_threshold, minresidues, restart=False):
+    """Create dataset of volumes from a directory containg all the PDBs
+
+    Parameters:
+    -----------
+    pdb_files -- List containing all pdb files
+    em_files -- List containing all experimental emdb files
+    dataset_root -- Directory to save dataset to.
+    maxRes -- Resolution to filter volume at.
+    mask_threshold -- Threshold to obtain non-background voxels.
+    minresidues -- Minimum number of residues to identify it as an SSE.
+        Recommended: alpha use 7 as this are two turns
+                     beta use 4 as the sheets are smaller
+    restart -- Restart whole dataset simulation (default False)
+    """
+    # Create dataset direcotry if it doesn't exist
+    create_directory(dataset_root)
+    for PDB, EM_map in tqdm(zip(pdb_files, em_files), total=len(pdb_files)):
+        # If PDB dataset already there in case errors cause restart
+        # Ignore if we want to redo the complete dataset
+        if os.path.isfile(dataset_root+'/%s.npy' % PDB[-8:-4]) and not restart:
+            continue
+        # Obtain volumes
+        Vf, Vmask, Vmask_SSE = create_experimental_alpha_mask(PDB, EM_map,
+            minresidues, maxRes, mask_threshold)
+        if Vf is not None and Vmask is not None and Vmask_SSE is not None:
+            # Save all volumes
+            data = np.stack([Vf, Vmask, Vmask_SSE])
+            np.save(dataset_root+'/%s.npy' % PDB[-8:-4], data)
