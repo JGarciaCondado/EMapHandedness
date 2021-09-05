@@ -18,16 +18,17 @@ df_emdb = pd.read_csv('data/EMDB_metadata.csv')
 
 # Obtain list of emdbs from pdbs
 df_emdb_pdbs = df_emdb.loc[df_emdb['fitted_pdbs'].isin(pdbs)]
+df_emdb_pdbs = df_emdb_pdbs.drop_duplicates(subset=['fitted_pdbs'])
 emdbs = df_emdb_pdbs['emdb_id'].tolist()
 emdb_ids = [re.findall(r'\d+', emdb_id)[0] for emdb_id in emdbs]
 pdbs = df_emdb_pdbs['fitted_pdbs'].tolist()
 
 # Create appropriate root files
 pdb_files = ['nrPDB/PDB_EMDB_boxes/%s.pdb' % pdb.upper() for pdb in pdbs]
-em_files = ['~/data/emdb_agosto21/EMD-%s/map/emd_%s.map.gz' % (e_id, e_id) for e_id in emdb_ids]
+em_files = ['/home/jgarcia/data/emdb_agosto21/EMD-%s/map/emd_%s.map.gz' % (e_id, e_id) for e_id in emdb_ids]
 
 # Dataset variables
-dataset_root = 'Exp_boxes'
+dataset_root = 'nrPDB/Dataset/Exp_boxes'
 minresidues = 7
 maxRes = 5
 mask_threshold = 0.5

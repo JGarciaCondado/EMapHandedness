@@ -99,20 +99,25 @@ def create_experimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
     """
     # Create temporary name
     fnHash = createHash()
-    # Uncompress map
-    if exp_map[-3:] == '.gz':
-        with mrcfile.open(exp_map) as mrc:
-            V_exp = mrc.data.copy()
-        uncompressed_map = '%sExp.map'%fnHash
-        with mrcfile.new(uncompressed_map) as mrc:
-            mrc.set_data(V_exp)
+    # Check that emdb file exists
+    if os.path.isfile(exp_map):
+        ok = True
     else:
-        uncompressed_map = exp_map
+        ok = False
     # Resize experimental map to same as simulated map
-    with mrcfile.open(exp_map) as mrc:
-        pixel_size = mrc.voxel_size['x']
-    ok = runJob("xmipp_image_resize -i %s -o %sResized.map --factor %f" %
-                (uncompressed_map, fnHash, pixel_size))
+    if ok:
+        if exp_map[-3:] == '.gz':
+            with mrcfile.open(exp_map) as mrc:
+                V_exp = mrc.data.copy()
+                uncompressed_map = '%sExp.map'%fnHash
+            with mrcfile.new(uncompressed_map) as mrc:
+                mrc.set_data(V_exp)
+        else:
+            uncompressed_map = exp_map
+        with mrcfile.open(exp_map) as mrc:
+            pixel_size = mrc.voxel_size['x']
+        ok = runJob("xmipp_image_resize -i %s -o %sResized.map --factor %f" %
+                    (uncompressed_map, fnHash, pixel_size))
     # Filter to same resolution as simulated map
     if ok:
         ok = runJob("xmipp_transform_filter -i %sResized.map -o %sExpFil.map "\
