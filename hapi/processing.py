@@ -96,7 +96,7 @@ def extract_all_boxes(Vf, Vmask, Vmask_SSE, box_dim, SE_centroids,
     return SSE_boxes, no_SSE_boxes
 
 
-def process_experimental_map(map_file, filter_res):
+def process_experimental_map(map_file, filter_res, contour_level):
     """Filter and resample experimental maps to given resolution."""
 
     # Assume all pixel sizes are equal and take x dimension
@@ -114,16 +114,17 @@ def process_experimental_map(map_file, filter_res):
         ok = runJob("xmipp_transform_filter -i %sResized.map -o %sFiltered.map "\
                     "--fourier low_pass %f --sampling 1"
                     % (fnHash, fnHash, filter_res))
-    # Otsu segementation to obtain mask from non-filtered mask
+    # Get mask by thresholding to conout level provided
     if ok:
-        ok = runJob("xmipp_volume_segment -i %sResized.map -o %sMask.map "\
-                    "--method otsu" % (fnHash, fnHash))
+        ok = runJob("xmipp_transform_threshold -i %sResized.map -o %sMask.map "\
+                    "--select below %f --substitute binarize -v 0" %
+                    (fnHash, fnHash, contour_level))
     # Set filtered volume and mask
     if ok:
         with mrcfile.open(fnHash + 'Filtered.map') as mrc:
             Vf = mrc.data.copy()
         with mrcfile.open(fnHash + 'Mask.map') as mrc:
-            Vmask = mrc.data.copy()
+            Vmask = mrc_mask_to_binary(mrc.data.copy())
     else:
         Vf, Vmask = None, None
     # Remove all temporary files produced

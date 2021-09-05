@@ -224,6 +224,30 @@ class EM3DNet_extended(EM3DNet):
 
         return accuracy/int(num_batches)
 
+    def eval_precision(self, dataloader, num_batches=10, threshold=0.5):
+        """ Evaluate the model accuracy on a given dataset."""
+
+        accuracy = 0
+
+        # Turn off gradients for validation, saves memory and computations
+        with torch.no_grad():
+
+            it_boxes = iter(dataloader)
+            TP = 0
+            FP = 0
+
+            for e in range(int(num_batches)):
+                labels, boxes = next(it_boxes)
+                # Move input and label tensors to the default device
+                boxes, labels = boxes.to(self.device), labels.to(self.device)
+                probs = self.forward(boxes)
+                pred_labels = probs.cpu().squeeze().numpy() >= threshold
+                bool_labels = labels.cpu().numpy().astype('bool')
+                TP += np.sum(np.logical_and(pred_labels, bool_labels))
+                FP += np.sum(np.logical_and(pred_labels, np.logical_not(bool_labels)))
+
+        return TP/(TP+FP)
+
 
 class AlphaVolNet(EM3DNet):
     """Model that detects alpha helices within a volume."""
