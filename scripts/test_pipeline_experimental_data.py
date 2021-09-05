@@ -5,29 +5,25 @@ import mrcfile
 
 from hapi.models import HaPi
 from hapi.processing import process_experimental_map
+from scipy.ndimage.morphology import binary_erosion
 
 # Load pipeline
-alpha_model = '../Models/5A_alpha_model.pth'
-hand_model = '../Models/5A_hand_model.pth'
-box_dim = 11
-c = 5
-pipeline = HaPi(alpha_model, hand_model, box_dim, c)
+alpha_model = 'Models/exp_alpha.pth'
+hand_model = 'models/5A_hand_model.pth'
+batch_size = 2048
+pipeline = HaPi(alpha_model, hand_model)
 
 # Load data
-ID = 22882
-EMmap = '../nrPDB/Exp_maps/maps/emd_%d.map' % ID
-filter_res = 5.0
-Vf, Vmask = process_experimental_map(EMmap, filter_res)
+EMmap = 'nrPDB/test_exp/7rh5.map'
+contour_level = 1.1 # From EMDB entry of authors
+filter_res = 5.0 # Models trained at that resolution
+Vf, Vmask = process_experimental_map(EMmap, filter_res, contour_level)
 
-# Predict alphas
-batch_size = 2048
-alpha_probs = pipeline.model_alpha.predict_volume(Vf, Vmask, batch_size)
-with mrcfile.new('../nrPDB/Exp_maps/alpha_maps/%s.map'
-                 % ID, overwrite=True) as mrc:
-    mrc.set_data(np.zeros(alpha_probs.shape, dtype=np.float32))
-    mrc.data[:, :, :] = alpha_probs
+# Uncomment to flip
+Vf = np.flip(Vf, axis=0)
+Vmask = np.flip(Vmask, axis=0)
 
 # Predict handedness
-thr = 0.5
+thr = 0.7
 handness = pipeline.predict(Vf, Vmask, thr, batch_size)
 print("Predicted handedness: %f" % handness)
