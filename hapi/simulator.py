@@ -99,11 +99,20 @@ def create_experimental_alpha_mask(PDB, exp_map, minresidues, maxRes,
     """
     # Create temporary name
     fnHash = createHash()
+    # Uncompress map
+    if exp_map[-3:] == '.gz':
+        with mrcfile.open(exp_map) as mrc:
+            V_exp = mrc.data.copy()
+        uncompressed_map = '%sExp.map'%fnHash
+        with mrcfile.new(uncompressed_map) as mrc:
+            mrc.set_data(V_exp)
+    else:
+        uncompressed_map = exp_map
     # Resize experimental map to same as simulated map
     with mrcfile.open(exp_map) as mrc:
         pixel_size = mrc.voxel_size['x']
     ok = runJob("xmipp_image_resize -i %s -o %sResized.map --factor %f" %
-                (exp_map, fnHash, pixel_size))
+                (uncompressed_map, fnHash, pixel_size))
     # Filter to same resolution as simulated map
     if ok:
         ok = runJob("xmipp_transform_filter -i %sResized.map -o %sExpFil.map "\
@@ -269,7 +278,7 @@ def create_SSE_dataset_exp(pdb_files, em_files, dataset_root, maxRes,
     for PDB, EM_map in tqdm(zip(pdb_files, em_files), total=len(pdb_files)):
         # If PDB dataset already there in case errors cause restart
         # Ignore if we want to redo the complete dataset
-        if os.path.isdir(dataset_root+'/'+PDB[:-4]) and not restart:
+        if os.path.isdir(dataset_root+'/'+PDB[-8:-4]) and not restart:
             continue
         # Obtain volumes
         Vf, Vmask, Vmask_SSE = create_experimental_alpha_mask(PDB, EM_map,
@@ -282,20 +291,20 @@ def create_SSE_dataset_exp(pdb_files, em_files, dataset_root, maxRes,
             Vmask_SSE, box_dim, SE_centroids, SE_noSSEMask)
         if SSE_boxes is not None and no_SSE_boxes is not None:
             # Create directory with pdb name
-            create_directory(dataset_root+'/'+PDB[:-4])
+            create_directory(dataset_root+'/'+PDB[-8:-4])
             # Create subdirecotries to store SSE and no SSE
-            create_directory(dataset_root+'/'+PDB[:-4]+'/alpha')
-            create_directory(dataset_root+'/'+PDB[:-4]+'/no_alpha')
+            create_directory(dataset_root+'/'+PDB[-8:-4]+'/alpha')
+            create_directory(dataset_root+'/'+PDB[-8:-4]+'/no_alpha')
             # Save the different boxes
             for i, box in enumerate(SSE_boxes):
                 # Check correct box dimensions it might be boxes were in a
                 # corner and have uneven box dimensions
                 if box.shape == (box_dim, box_dim, box_dim):
-                    np.save(dataset_root+'/'+PDB[:-4]+'/alpha/'
+                    np.save(dataset_root+'/'+PDB[-8:-4]+'/alpha/'
                             +'box%d.npy' % i, box)
             for i, box in enumerate(no_SSE_boxes):
                 if box.shape == (box_dim, box_dim, box_dim):
-                    np.save(dataset_root+'/'+PDB[:-4]+'/no_alpha/'
+                    np.save(dataset_root+'/'+PDB[-8:-4]+'/no_alpha/'
                             +'box%d.npy' % i, box)
 
 def create_volume_dataset(data_root, dataset_root, maxRes, mask_threshold,
