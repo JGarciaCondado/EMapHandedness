@@ -10,8 +10,8 @@ from hapi.data import SSEDataset, HandDataset
 from hapi.models import EM3DNet_extended
 
 # Variables
-torchDataset_root = 'nrPDB/torchDataset/alphaDataset'
-model_directory = 'models/5A_SSE_alpha.pth'
+torchDataset_root = 'nrPDB/torchDataset/Exp_alphas'
+model_directory = 'Models/5A/alpha/'
 batch_size = 1024
 
 # Load validation and test loss
@@ -41,4 +41,4 @@ print("Test accuracy: %f" % model.eval_performance(
 
 # Evaluate precision
 print("Test precision: %f" % model.eval_precision(
-    testloader, num_batches=len(testloader)))
+    testloader, num_batches=len(testloader), threshold=0.7))
