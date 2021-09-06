@@ -21,7 +21,7 @@ create_volume_dataset_pdb(data_root, dataset_root, maxRes, mask_threshold,
     SSE_mask_threshold, SSE_type, minresidues, restart)
 
 # Generate Dataset object
-dataset = VolDataset(torchDataset_root)
+dataset = VolDataset(dataset_root)
 
 # Split into different Datasets
 valsize = int(len(dataset)*valsplit)

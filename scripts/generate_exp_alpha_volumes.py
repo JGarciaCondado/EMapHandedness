@@ -41,7 +41,7 @@ create_volume_dataset_exp(pdb_f, emdb_f, dataset_root, maxRes, mask_threshold,
                           minresidues, restart)
 
 # Generate Dataset object
-dataset = VolDataset(torchDataset_root)
+dataset = VolDataset(dataset_root)
 
 # Save Datasets
 torch.save(dataset, os.path.join(torchDataset_root, 'testDataset'))
