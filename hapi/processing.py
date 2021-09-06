@@ -99,16 +99,28 @@ def extract_all_boxes(Vf, Vmask, Vmask_SSE, box_dim, SE_centroids,
 def process_experimental_map(map_file, filter_res, contour_level):
     """Filter and resample experimental maps to given resolution."""
 
-    # Assume all pixel sizes are equal and take x dimension
     with mrcfile.open(map_file) as mrc:
         pixel_size = mrc.voxel_size['x']
 
     # Create temporary name
     fnHash = createHash()
 
+    # Uncompress map
+    if map_file[-3:] == '.gz':
+        with mrcfile.open(map_file) as mrc:
+            V_exp = mrc.data.copy()
+            uncompressed_map = '%sExp.map'%fnHash
+        with mrcfile.new(uncompressed_map) as mrc:
+            mrc.set_data(V_exp)
+    else:
+        uncompressed_map = map_file
+
+    # Assume all pixel sizes are equal and take x dimension
+    with mrcfile.open(map_file) as mrc:
+        pixel_size = mrc.voxel_size['x']
     # Resize to pixel size of 1A/pixel
     ok = runJob("xmipp_image_resize -i %s -o %sResized.map --factor %f" %
-                (map_file, fnHash, pixel_size))
+                (uncompressed_map, fnHash, pixel_size))
     # Filter to specified resolution
     if ok:
         ok = runJob("xmipp_transform_filter -i %sResized.map -o %sFiltered.map "\
