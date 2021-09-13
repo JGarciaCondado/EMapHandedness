@@ -10,8 +10,8 @@ from hapi.models import HaPi
 from hapi.data import VolDataset
 
 # Load pipeline
-alpha_model = 'models/5A_alpha_model.pth'
-hand_model = 'models/5A_hand_model.pth'
+alpha_model = 'models/5A_SSE_alpha.pth'
+hand_model = 'models/5A_TL_hand_alpha.pth'
 pipeline = HaPi(alpha_model, hand_model)
 
 # Predictions variables
