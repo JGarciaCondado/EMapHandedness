@@ -22,8 +22,8 @@ batch_size = 2048
 df_emdb = pd.read_csv('data/EMDB_metadata.csv')
 IDs = [int(ID[4:]) for ID in df_emdb['emdb_id'].tolist()]
 print(IDs)
-map_f = 'nrPDB/Exp_hand_dataset/EMD-%d/map/emd_%d.map.gz'
-header_f = 'nrPDB/Exp_hand_dataset/EMD-%d/header/emd-%d-v30.xml'
+map_f = '/home/jgarcia/data/emdb_agosto21/EMD-%d/map/emd_%d.map.gz'
+header_f = '/home/jgarcia/data/emdb_agosto21/EMD-%d/header/emd-%d-v30.xml'
 
 # Evaluate data
 save_file = 'metrics/emdb_hands.csv'

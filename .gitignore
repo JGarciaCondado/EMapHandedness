@@ -26,3 +26,9 @@ HaPi.egg-info/
 
 # Ignore figures folders
 figures/
+
+# Ignore mac features
+.DS_Store
+
+# Ignore plots
+plots/

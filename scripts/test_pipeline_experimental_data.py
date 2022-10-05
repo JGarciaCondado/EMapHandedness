@@ -14,8 +14,8 @@ pipeline = HaPi(alpha_model, hand_model)
 
 # Load data
 ID = 12339
-EMmap = 'nrPDB/Exp_hand_dataset/EMD-%d/map/emd_%d.map.gz' % (ID, ID)
-header = 'nrPDB/Exp_hand_dataset/EMD-%d/header/emd-%d-v30.xml' % (ID, ID)
+EMmap = '/home/jgarcia/data/emdb_agosto21/EMD-%d/map/emd_%d.map.gz' % (ID, ID)
+header = '/home/jgarcia/data/emdb_agosto21/EMD-%d/header/emd-%d-v30.xml' % (ID, ID)
 contour_level = float(ET.parse(header).getroot().findall('.//level')[0].text) # From EMDB entry of authors
 filter_res = 5.0 # Models trained at that resolution
 Vf, Vmask = process_experimental_map(EMmap, filter_res, contour_level)
