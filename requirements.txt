@@ -1,4 +1,4 @@
-torch==1.7.1
+torch==1.6
 numpy==1.18.5
 tqdm==4.56.0
 scipy==1.5.2
