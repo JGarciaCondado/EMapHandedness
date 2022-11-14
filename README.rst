@@ -5,6 +5,12 @@ HaPi - Handedness Pipeline
 HaPi (Handedness Pipeline) is a pipeline used to determine the hand of cryoEM determined maps. Resolving 3D sturctures of macromolecules using Single Particle Analysis (SPA) is an ill-posed problem and so the determined structure can be the specular (mirrored) version of the true underlying structure. Macromolecules in nature have a specific handedness and it is important for atomic fitting of the structure that the resolved structure has the correct hand. At high resolution this is easily determined by looking at the map in a viewer like Chimera but it can be really difficult at resolutions of 4 to 5 Ångstroms. HaPi is a deep learning pipeline to automatically determine the hand of the electron density map automatically for structures below 5 Ångstroms of resolution.
 
 =====
+Cite
+=====
+
+J Garcia Condado, A. Muñoz-Barrutia, and C. O. S. Sorzano, “Automatic determination of the handedness of single-particle maps of macromolecules solved by CryoEM”, Journal of Structural Biology, vol. 214, no. 4, p. 107915, Dec. 2022. DOI: https://doi.org/10.1016/j.jsb.2022.107915
+
+=====
 Setup
 =====
 
@@ -61,24 +67,14 @@ Data
 
 To download the data used a set of batch-download shell scripts and the PDB and EMD IDs are available in **/data**.
 
-- Download PDBs used to simulate boxes
+- Download PDBs:
 
 Using the command line:
 
 .. code-block:: shell
 
    chmod +x batch_download_pdb.sh 
-   ./batch_download_pdb.sh -f PDB_boxes_list.txt -o path/for/pdbs -p
-   gunzip path/for/pdbs/*.pdb.gz
-
-- Download PDBs used to simulate volumes
-
-Using the command line:
-
-.. code-block:: shell
-
-   chmod +x batch_download_pdb.sh 
-   ./batch_download_pdb.sh -f PDB_volumes_list.txt -o path/for/pdbs -p
+   ./batch_download_pdb.sh -f {file_list_pdbs.txt} -o path/for/pdbs -p
    gunzip path/for/pdbs/*.pdb.gz
 
 - Download Experimental cryoEM maps
@@ -88,5 +84,14 @@ Using the command line:
 .. code-block:: shell
 
    chmod +x batch_download_emdb.sh 
-   ./batch_download_emdb.sh -f emdb_list.txt -o path/for/emdmaps
+   ./batch_download_emdb.sh -f {file_list_pdbs.txt} -o path/for/emdmaps
+   
+In **/data** you can find the following lists of PDBs and cyroEM maps (script it relates to from **/scripts**):
+
+- ``emdb_list.txt`` (``test_pipeline_emdb_dataset.py``): List of all cryoEM maps accesible through EMDB as of August 2021
+- ``EMDB_PDB_boxes.txt`` (``generate_experimental_boxes.py``): List of cryoEM maps used to train alpha helix 3DCNN
+- ``EMDB_PDB_test.txt`` (``generate_exp_alpha_volumes.py`` >> ``test_alphavolnet_experimental_data.py``): List of cryoEM maps to test accuracy of alpha helix 3DCNN
+- ``EMDB_hand_examples.txt`` (``test_pipeline_experimental_data.py``): List of cryoEM maps for visual testing
+- ``PDB_boxes_list.txt`` (``generate_simulated_boxes.py``): List of PDBs used to simulate boxes for training
+- ``PDB_volumes_list.txt`` (``generate_simulated_volumes.py`` >> ``test_pipeline_simulated_data.py``): List of PDBs used to simulate volumes
 
