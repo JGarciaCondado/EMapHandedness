@@ -40,7 +40,7 @@ The simulator and the experimental map processing require that Xmipp_ commands b
 
 1. Download Scipion_.
 
-.. _Scipion: https://scipion-em.github.io/docs/docs/scipion-modes/how-to-install.html
+.. _Scipion: https://scipion-em.github.io/docs/release-3.0.0/docs/scipion-modes/how-to-install.html
 
 2. Make Xmipp commands available.
 
@@ -95,3 +95,20 @@ In **/data** you can find the following lists of PDBs and cyroEM maps (script it
 - ``PDB_boxes_list.txt`` (``generate_simulated_boxes.py``): List of PDBs used to simulate boxes for training
 - ``PDB_volumes_list.txt`` (``generate_simulated_volumes.py`` >> ``test_pipeline_simulated_data.py``): List of PDBs used to simulate volumes
 
+
+=========
+Usage
+=========
+
+For training the models run (change direcotries in scripts and variables):
+
+.. code-block:: shell
+
+    scripts/generate_{simulated/experimental}_boxes.py
+    scripts/create_torchdataset_{SSE/hand}.py
+    scripts/train_{SSE/hand}.py
+    scripts/test_model.py
+    
+For running the pipeline see ``scripts/test_pipeline_experimental_data.py``.
+
+Use directly in Scipion_ by installing the plugin ``scipion-em-xmipp`` and using the protocol ``deep hand``.
